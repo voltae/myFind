@@ -15,17 +15,20 @@ int main() {
     /* protocols the error */
     int error;
 
+    /* call the openDirectory function for stepping though the directory */
     error = openDirectory(".");
 
+    /* log out itf an error occured */
     if (error)
     {
         fprintf(stderr, "An error occured. %s\n", strerror(errno));
     }
 
+    /* call a different function. This function changes the actual working directory, only for testing purposese */
     changeDir();
 
 
-    /* chage the current directory, note directory is relative to the current one */
+    /* change the current directory, note directory is relative to the current one */
     error = chdir("test_dir/test/subTest_dir");
 
     /* if an error ocured, print it out. */
@@ -38,8 +41,7 @@ int main() {
     }
 
     /* return to the previous diretory */
-
-    error = chdir("..");
+error = chdir("..");
     /* if an error ocured, print it out. */
     if (error) {
         perror("Error occured");
@@ -49,11 +51,9 @@ int main() {
         changeDir();
     }
 
-
-
     return 0;
 }
-
+/* Function prints out the currend working directory. Same as "pwd" */
 void changeDir(void) {
     char *baseDir = NULL;
     baseDir = getcwd(NULL, 0);
@@ -88,7 +88,7 @@ int openDirectory(const char *dirName) {
 
     directory = opendir(dirName);
 
-    /* copy the root directory name to the path string */
+    /* copy the root directory name to the path string, this is the root of the directory path  */
     strcpy(path, dirName);
 
     if (directory == NULL) {
@@ -111,12 +111,21 @@ int openDirectory(const char *dirName) {
             printf("And tataa the pathname as string: %s\n", filename);
 
             /* test the recursion , leave out the "." and ".." directory */
-            if (strcmp(filename, ".") && strcmp(filename, ".."))
+            if ((strcmp(filename, ".") != 0) && (strcmp(filename, "..") != 0))
             {
 
+                /* construct the path name by concatenate the current path with the new path
+                 * sprintf: The C library function int sprintf(char *str, const char *format, ...) sends formatted output to a string pointed to, by str.
+                 * Return Value:
+                    If successful, the total number of characters written is returned excluding the null-character appended at the end of the string,
+                    otherwise a negative number is returned in case of failure.*/
+                /* FIXME: replace sprintf with snprintf (Buffer overflow) */
                 sprintf(path, "%s/%s", path, filename);
 
+                /* Just log out the found path, remove if all works */
                 printf("Stepping into [%s]\n", path);
+
+                /* start the recursion with each found directory */
                 openDirectory(path);
             }
 
