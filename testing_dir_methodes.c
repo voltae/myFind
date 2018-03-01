@@ -29,6 +29,7 @@ int main() {
 
 
     /* change the current directory, note directory is relative to the current one */
+    /* source cde for chdir: https://code.woboq.org/userspace/glibc/io/chdir.c.html */
     error = chdir("test_dir/test/subTest_dir");
 
     /* if an error ocured, print it out. */
@@ -86,6 +87,7 @@ int openDirectory(const char *dirName) {
      http://man7.org/linux/man-pages/man3/readdir.3.html */
     struct dirent *pdirent;
 
+    /* definition of opendir, https://github.com/lattera/glibc/blob/master/sysdeps/unix/opendir.c */
     directory = opendir(dirName);
 
     /* copy the root directory name to the path string, this is the root of the directory path  */
@@ -96,6 +98,7 @@ int openDirectory(const char *dirName) {
         return -1;
     }
 
+    /* definition of readdir */
     while ((pdirent = readdir(directory)) != NULL) {
         printf("[%s]\n", pdirent->d_name);
        /* printf("User: [%s]", pdirent->) */
@@ -136,6 +139,13 @@ int openDirectory(const char *dirName) {
 
     return 0;
 
+}
+
+/* TODO: Add second function for reading the directory and print out the entries in the fashion needed by entries given the application */
+/* a stub for the function directory is the pointer to the directory struct */
+int readDirectory (DIR *directory)
+{
+    /* here comes the implementation of the new function */
 }
 
 
