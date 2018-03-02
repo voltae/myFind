@@ -7,7 +7,7 @@
 #include <string.h>    /* for strerror() */
 #include <memory.h>     /* for strerror() */
 
-void changeDir(void);
+void printDir(void);
 int openDirectory(const char *dirName);
 
 int main() {
@@ -25,7 +25,7 @@ int main() {
     }
 
     /* call a different function. This function changes the actual working directory, only for testing purposese */
-    changeDir();
+    printDir();
 
 
     /* change the current directory, note directory is relative to the current one */
@@ -38,7 +38,7 @@ int main() {
     }
         /* int the other case print the new current directory out. */
     else {
-        changeDir();
+        printDir();
     }
 
     /* return to the previous diretory */
@@ -49,13 +49,13 @@ error = chdir("..");
     }
         /* int the other case print the new current directory out. */
     else {
-        changeDir();
+        printDir();
     }
 
     return 0;
 }
 /* Function prints out the currend working directory. Same as "pwd" */
-void changeDir(void) {
+void printDir(void) {
     char *baseDir = NULL;
     baseDir = getcwd(NULL, 0);
     fprintf(stdout, "New base Dir: %s\n", baseDir);
