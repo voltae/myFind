@@ -10,14 +10,26 @@
 void printDir(void);
 int openDirectory(const char *dirName);
 
-int main() {
+int main(int argc, char **argv) {
 
     /* protocols the error */
     int error;
 
-    /* call the openDirectory function for stepping though the directory */
-    error = openDirectory(".");
+    /* if no arguments are provided, print out a use message, and exit with failure */
+    if (argc < 2)
+    {
+        printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]");
+        exit(EXIT_FAILURE);
+    }
 
+    /* get the path from the arguments.
+    char *basePath = malloc((strlen(argv[1] +1 )) * sizeof(char));
+    strcpy(basePath, argv[1]);
+
+     */
+    char * basePath = argv[1];
+    /* call the openDirectory function for stepping though the directory */
+    error = openDirectory(basePath);
     /* log out itf an error occured */
     if (error)
     {
@@ -42,7 +54,7 @@ int main() {
     }
 
     /* return to the previous diretory */
-error = chdir("..");
+    error = chdir("..");
     /* if an error ocured, print it out. */
     if (error) {
         perror("Error occured");
@@ -71,7 +83,9 @@ void printDir(void) {
 int openDirectory(const char *dirName) {
 
     char *filename;
+    /* define the path char array, start with a fixed length size */
     char path[100];
+
     /* declare a pointer to a DIR (directory datatype)
      * https://www.systutorials.com/docs/linux/man/3-opendir/  */
     /* The type DIR, which is defined in the header <dirent.h>, represents a directory stream, which is an ordered sequence of all the directory entries in a particular directory.
@@ -94,14 +108,14 @@ int openDirectory(const char *dirName) {
     strcpy(path, dirName);
 
     if (directory == NULL) {
-       fprintf(stderr, "An error occured during open dir: %s \n%s\n", dirName, strerror(errno));
+        fprintf(stderr, "An error occured during open dir: %s \n%s\n", dirName, strerror(errno));
         return -1;
     }
 
     /* definition of readdir */
     while ((pdirent = readdir(directory)) != NULL) {
         printf("[%s]\n", pdirent->d_name);
-       /* printf("User: [%s]", pdirent->) */
+        /* printf("User: [%s]", pdirent->) */
 
         /* d_type This field contains a value indicating the file type, making
         it possible to avoid the expense of calling lstat(2) if fur‐
@@ -109,7 +123,7 @@ int openDirectory(const char *dirName) {
 
         if (pdirent->d_type == DT_DIR)
         {
-                        printf("Hoorray this is a directory. save that name!\n");
+            printf("Hoorray this is a directory. save that name!\n");
             filename = pdirent->d_name;
             printf("And tataa the pathname as string: %s\n", filename);
 
@@ -122,8 +136,10 @@ int openDirectory(const char *dirName) {
                  * Return Value:
                     If successful, the total number of characters written is returned excluding the null-character appended at the end of the string,
                     otherwise a negative number is returned in case of failure.*/
-                /* FIXME: replace sprintf with snprintf (Buffer overflow) */
+                /* TODO: replace sprintf with snprintf (Buffer overflow) */
+
                 sprintf(path, "%s/%s", path, filename);
+
 
                 /* Just log out the found path, remove if all works */
                 printf("Stepping into [%s]\n", path);
