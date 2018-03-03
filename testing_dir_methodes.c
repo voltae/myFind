@@ -1,15 +1,32 @@
+/** @file myFind.c
+ * Betriebssysteme Assigment 1 - myFind
+ * Beispiel 1
+ * @author Valentin Platzgummer
+ * @author Lara Kammerer
+ *
+ * @todo
+ */
+
+//* ------------------------------------------------------ includes -- */
 #include <stdio.h>
 #include <unistd.h>     /* for chdir */
 #include <stdlib.h>     /* for free */
 #include <errno.h>      /* for errno */
 #include <sys/types.h>  /* for opendir */
-#include <dirent.h>     /* for opendir *
+#include <dirent.h>     /* for opendir */
 #include <string.h>    /* for strerror() */
 #include <memory.h>     /* for strerror() */
 
+/* ------------------------------------------------------- functions -- */
 void printDir(void);
 int openDirectory(const char *dirName);
 
+/** @brief implementatio of a simplified find programm
+ *
+ * @param argc Number of arguments
+ * @param argv actions used
+ * @return
+ */
 int main(int argc, char **argv) {
 
     /* protocols the error */
@@ -22,18 +39,13 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    /* get the path from the arguments.
-    char *basePath = malloc((strlen(argv[1] +1 )) * sizeof(char));
-    strcpy(basePath, argv[1]);
-
-     */
     char * basePath = argv[1];
     /* call the openDirectory function for stepping though the directory */
     error = openDirectory(basePath);
     /* log out itf an error occured */
     if (error)
     {
-        fprintf(stderr, "An error occured. %s\n", strerror(errno));
+        fprintf(stderr, "An error occurred. %s\n", strerror(errno));
     }
 
     /* call a different function. This function changes the actual working directory, only for testing purposese */
@@ -42,18 +54,18 @@ int main(int argc, char **argv) {
 
     /* change the current directory, note directory is relative to the current one */
     /* source cde for chdir: https://code.woboq.org/userspace/glibc/io/chdir.c.html */
-    error = chdir("test_dir/test/subTest_dir");
+    error = chdir("~/Dokumente");
 
     /* if an error ocured, print it out. */
     if (error) {
-        perror("Error occured - subTest_dir");
+        perror("Error occurred - subTest_dir");
     }
         /* int the other case print the new current directory out. */
     else {
         printDir();
     }
 
-    /* return to the previous diretory */
+    /* return to the previous directory */
     error = chdir("..");
     /* if an error ocured, print it out. */
     if (error) {
@@ -108,7 +120,7 @@ int openDirectory(const char *dirName) {
     strcpy(path, dirName);
 
     if (directory == NULL) {
-        fprintf(stderr, "An error occured during open dir: %s \n%s\n", dirName, strerror(errno));
+        fprintf(stderr, "An error occurred during open dir: %s \n%s\n", dirName, strerror(errno));
         return -1;
     }
 
@@ -152,6 +164,7 @@ int openDirectory(const char *dirName) {
         }
     }
     closedir(directory);
+    path[0] = '\0';
 
     return 0;
 
