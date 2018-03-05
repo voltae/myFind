@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
 
     char *basePath = argv[1];
     /* call the openDirectory function for stepping though the directory */
+
     error = openDirectory(basePath);
     /* log out itf an error occured */
     if (error) {
@@ -62,13 +63,14 @@ int main(int argc, char **argv) {
  * @return int 0 in case in regular case. -1 in error case.
  *
  */
-    int openDirectory(const char *dirName) {
+int openDirectory(const char *dirName) {
 
     char *filename;
     /* define the path char array, start with a fixed length size
      * was 100 , has to be much longer trying 500 */
     /* FIXME: the char pointer path should be initialized with a dynamic length */
-    char path[500];
+    char basePath[500];
+    char pathCurrent[500];
 
     /* declare a pointer to a DIR (directory datatype) */
     DIR *directory;
@@ -79,7 +81,7 @@ int main(int argc, char **argv) {
     directory = opendir(dirName);
 
     /* copy the root directory name to the path string, this is the root of the directory path  */
-    strcpy(path, dirName);
+    strcpy(basePath, dirName);
 
     if (directory == NULL) {
         fprintf(stderr, "An error occurred during open dir: %s \n%s\n", dirName, strerror(errno));
@@ -88,7 +90,9 @@ int main(int argc, char **argv) {
 
     /* definition of readdir */
     while ((pdirent = readdir(directory)) != NULL) {
-        printf("[%s]\n", pdirent->d_name);
+
+
+        printf("Filename: [%s]\n", pdirent->d_name);
         /* printf("User: [%s]", pdirent->) */
 
         if (pdirent->d_type == DT_DIR) {
@@ -99,27 +103,27 @@ int main(int argc, char **argv) {
 
                 /* TODO: replace sprintf with snprintf (Buffer overflow) */
 
-                sprintf(path, "%s/%s", path, filename);
+                sprintf(pathCurrent, "%s/%s", basePath, filename);
 
                 /* start the recursion with each found directory */
-                openDirectory(path);
+                openDirectory(pathCurrent);
             }
         }
     }
     closedir(directory);
-    path[0] = '\0';
+
 
     return 0;
 }
 
 /* TODO: Add second function for reading the directory and print out the entries in the fashion needed by entries given the application */
 /* a stub for the function directory is the pointer to the directory struct */
-    int readDirectory (DIR *directory)
-    {
-        /* here comes the implementation of the new function */
+int readDirectory (DIR *directory)
+{
+    /* here comes the implementation of the new function */
 
-        return 0;
-    }
+    return 0;
+}
 
 
 //
