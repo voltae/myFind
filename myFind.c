@@ -18,11 +18,20 @@
 #include <memory.h>     /* for strerror() */
 
 /* ------------------------------------------------------- functions -- */
+
+/* ------------------------------------------------------- const char --*/
+const char *print = "-print";
+const char *user = "-user";
+const char *uid ="-uid";
+const char *type = "-type";
+const char *name = "-name";
+const char *ls = "-ls";
+
 void printDir(void);
 int openDirectory(const char *dirName);
 int readDirectory (DIR *directory);
 
-/** @brief implementatio of a simplified find programm
+/** @brief implementation of a simplified find programm
  *
  * @param argc Number of arguments
  * @param argv actions used
@@ -38,6 +47,32 @@ int main(int argc, char **argv) {
         printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]");
         exit(EXIT_FAILURE);
     }
+
+    /* validate argv actions (begins always with a -) against menu action */
+    for (int i = 0; i < argc; ++i)
+    {
+        if (argv[i][0] == '-')
+        {
+            if (strcmp(argv[i], print)  && strcmp(argv[i], user) &&  strcmp(argv[i], uid) && strcmp(argv[i], type) && strcmp(argv[i], name)
+                    &&  strcmp(argv[i], ls))
+            {
+                printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        if (!(strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) && strcmp(argv[i], name)))
+        {
+            if (argc == i + 1)
+            {
+                printf("Missing argument for %s\n", argv[i]);
+                exit(EXIT_FAILURE);
+            }
+        }
+
+    }
+
+
 
     char *basePath = argv[1];
     /* call the openDirectory function for stepping though the directory */
@@ -92,7 +127,7 @@ int openDirectory(const char *dirName) {
     while ((pdirent = readdir(directory)) != NULL) {
 
 
-        printf("Filename: [%s]\n", pdirent->d_name);
+        printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
         /* printf("User: [%s]", pdirent->) */
 
         if (pdirent->d_type == DT_DIR) {
