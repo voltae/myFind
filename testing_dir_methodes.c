@@ -13,6 +13,8 @@
 #include <stdlib.h>     /* for free */
 #include <errno.h>      /* for errno */
 #include <sys/types.h>  /* for opendir */
+#include <sys/stat.h>   /* for stat() */
+#include <unistd.h>     /* for stat() */
 #include <dirent.h>     /* for opendir */
 #include <string.h>    /* for strerror() */
 #include <memory.h>     /* for strerror() */
@@ -20,6 +22,8 @@
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
 int openDirectory(const char *dirName);
+/* read the file and output them according the incoming parameters. */
+int do_file (const char *filename, const char *parms);
 
 /** @brief implementatio of a simplified find programm
  *
@@ -96,7 +100,10 @@ int openDirectory(const char *dirName) {
 
     char *filename;
     /* define the path char array, start with a fixed length size */
-    char path[100];
+    char basePath[100];
+    char filePath[100];
+    /* actual file name */
+    char fileName[100];
 
     /* declare a pointer to a DIR (directory datatype)
      * https://www.systutorials.com/docs/linux/man/3-opendir/  */
@@ -113,11 +120,17 @@ int openDirectory(const char *dirName) {
      http://man7.org/linux/man-pages/man3/readdir.3.html */
     struct dirent *pdirent;
 
+    /* efie a struct stat for each file, in the stat struct is the information about the file */
+    struct stat pstat;
+
+    /* int error */
+    int staterror = 0;
     /* definition of opendir, https://github.com/lattera/glibc/blob/master/sysdeps/unix/opendir.c */
     directory = opendir(dirName);
 
+
     /* copy the root directory name to the path string, this is the root of the directory path  */
-    strcpy(path, dirName);
+    strcpy(basePath, dirName);
 
     if (directory == NULL) {
         fprintf(stderr, "An error occurred during open dir: %s \n%s\n", dirName, strerror(errno));
@@ -127,13 +140,30 @@ int openDirectory(const char *dirName) {
     /* definition of readdir */
     while ((pdirent = readdir(directory)) != NULL) {
         printf("[%s]\n", pdirent->d_name);
+        sprintf(fileName, "%s/%s", basePath, pdirent->d_name);
         /* printf("User: [%s]", pdirent->) */
+
+        /* test the do_file function */
+        do_file(fileName, NULL);
+        /* get the file stst */
+
+        staterror = stat(fileName, &pstat);
+        printf("Filename: %s\n", dirName);
+        printf("I-node number: %ld\n", pstat.st_ino);
+        printf("User UID: %ld\n", pstat.st_uid);
+        printf("Date created: ");
+        printf("St mode_ %lo\n", pstat.st_mode);
+        printf("St mode is Driectory file %d\n", S_ISDIR(pstat.st_mode));
+        printf("St mode is regualr file %d\n", S_ISREG(pstat.st_mode));
+        printf("pdirent->d_type: %d\n", pdirent->d_type == DT_DIR);
 
         /* d_type This field contains a value indicating the file type, making
         it possible to avoid the expense of calling lstat(2) if fur‐
         ther actions depend on the type of the file. */
 
+
         if (pdirent->d_type == DT_DIR)
+        //if (S_ISDIR(pstat.st_mode))
         {
             printf("Hoorray this is a directory. save that name!\n");
             filename = pdirent->d_name;
@@ -150,21 +180,21 @@ int openDirectory(const char *dirName) {
                     otherwise a negative number is returned in case of failure.*/
                 /* TODO: replace sprintf with snprintf (Buffer overflow) */
 
-                sprintf(path, "%s/%s", path, filename);
+                sprintf(filePath, "%s/%s", basePath, filename);
 
 
                 /* Just log out the found path, remove if all works */
-                printf("Stepping into [%s]\n", path);
+                printf("Stepping into [%s]\n", filePath);
 
                 /* start the recursion with each found directory */
-                openDirectory(path);
+                openDirectory(filePath);
             }
 
 
         }
     }
     closedir(directory);
-    path[0] = '\0';
+    basePath[0] = '\0';
 
     return 0;
 
@@ -172,9 +202,26 @@ int openDirectory(const char *dirName) {
 
 /* TODO: Add second function for reading the directory and print out the entries in the fashion needed by entries given the application */
 /* a stub for the function directory is the pointer to the directory struct */
-int readDirectory (DIR *directory)
+int do_file (const char *filename, const char *parms)
 {
+
     /* here comes the implementation of the new function */
+    /* st is a struct of type stat for each file, in the stat struct is the information about the file */
+    struct stat st;
+
+    /* assign the filestats to the current file */
+    if (stat(filename, &st) == -1)
+    {
+        fprintf(stderr, "Error in stat: %s", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Filename: %s\n", filename);
+
+    if (S_ISDIR(st.st_mode))
+    {
+        printf("this is a directory!\n");
+    }
 }
 
 
