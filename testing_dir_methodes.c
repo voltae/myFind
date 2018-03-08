@@ -100,10 +100,10 @@ int openDirectory(const char *dirName) {
 
     char *filename;
     /* define the path char array, start with a fixed length size */
-    char basePath[100];
-    char filePath[100];
+    char basePath[400];
+    char filePath[400];
     /* actual file name */
-    char fileName[100];
+    char fileName[400];
 
     /* declare a pointer to a DIR (directory datatype)
      * https://www.systutorials.com/docs/linux/man/3-opendir/  */

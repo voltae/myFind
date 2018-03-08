@@ -135,6 +135,7 @@ int do_dir(const char *dirName, const char **param) {
         }
 
         /* call the do_file function with the file path */
+        printf("Before calling do_file filePath: %s\n", filePath);
         do_file(filePath, param);
 
         /*
@@ -181,7 +182,7 @@ int do_file(const char *filename, const char **parms) {
     int i = 0;
 
     while (parms[i] != NULL) {
-        stat(filename, st);
+        printf("Filepath stat: %s\n", filename);
         if (stat(filename, st) == -1) {
             fprintf(stderr, "Error in stat: %s\n", strerror(errno));
 
@@ -191,13 +192,6 @@ int do_file(const char *filename, const char **parms) {
 
         printf("File path: %s\n", filename);
 
-    }
-
-
-    /* assign the filestats to the current file */
-    if (stat(filename, st) == -1) {
-        fprintf(stderr, "Error in stat: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
     }
 
     printf("Filename: %s\n", filename);
