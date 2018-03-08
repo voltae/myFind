@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     /* if no arguments are provided, print out a use message, and exit with failure */
     if (argc < 2) {
-        printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]");
+        printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]\n");
         exit(EXIT_FAILURE);
     }
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
             if (strcmp(argv[i], print) && strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) &&
                 strcmp(argv[i], name)
                 && strcmp(argv[i], ls)) {
-                printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]");
+                printf("usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]\n");
                 exit(EXIT_FAILURE);
             }
         }
@@ -81,14 +81,6 @@ int main(int argc, char **argv) {
     if (error) {
 
         return 0;
-    }
-/* Function prints out the current working directory. Same as "pwd" */
-    void printDir(void) {
-        char *baseDir = NULL;
-        baseDir = getcwd(NULL, 0);
-        fprintf(stdout, "New base Dir: %s\n", baseDir);
-        /* free the new pointer coming from the system call */
-        free(baseDir);
     }
 }
 
@@ -123,39 +115,46 @@ int do_dir(const char *dirName, const char **param) {
     }
 
     /* definition of readdir */
-    if ((pdirent = readdir(directory)) != NULL) {
+    while ((pdirent = readdir(directory)) != NULL) {
         int error = 0;
         char *filename = pdirent->d_name;
-        /* create the full filepath for found file */
+
+        /* FIXME: leave out the "." and ".." */
+
+        if (!strcmp(filename, ".") || !strcmp(filename, ".."))
+            continue;
+
+        /* create the full filepath for found file, add 2 extra spaces for  '/' and '\0' */
+        int lengthOfPath = (strlen(filename) + strlen(basePath)) + 2;
         /* FIXME: Don't forget the free the filepath */
-        filePath = malloc((sizeof(basePath) + sizeof(filename) + sizeof(char)));
-        error = (snprintf(filePath, sizeof(filePath), "%s/%s", basePath, filename));
+        filePath = malloc(lengthOfPath * sizeof(char));
+
+        error = (snprintf(filePath, lengthOfPath + 1, "%s/%s", basePath, filename));
         if (error < 0) {
-            fprintf(stderr, "An error occurred, %s", strerror(errno));
+            fprintf(stderr, "An error occurred, %s\n", strerror(errno));
         }
 
         /* call the do_file function with the file path */
         do_file(filePath, param);
 
         /*
-            printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
-            /* printf("User: [%s]", pdirent->)
+         printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
+         /* printf("User: [%s]", pdirent->)
 
-            if (pdirent->d_type == DT_DIR) {
-                filename = pdirent->d_name;
+         if (pdirent->d_type == DT_DIR) {
+         filename = pdirent->d_name;
 
-                / test the recursion , leave out the "." and ".." directory
-                if ((strcmp(filename, ".") != 0) && (strcmp(filename, "..") != 0)) {
+         / test the recursion , leave out the "." and ".." directory
+         if ((strcmp(filename, ".") != 0) && (strcmp(filename, "..") != 0)) {
 
-                    /* TODO: replace sprintf with snprintf (Buffer overflow)
+         /* TODO: replace sprintf with snprintf (Buffer overflow)
 
-                    sprintf(pathCurrent, "%s/%s", basePath, filename);
+         sprintf(pathCurrent, "%s/%s", basePath, filename);
 
-                    /* start the recursion with each found directory
-                    openDirectory(pathCurrent, NULL;
+         /* start the recursion with each found directory
+         openDirectory(pathCurrent, NULL;
 
-                    */
-
+         */
 
         /* free the filePath created in here */
         free(filePath);
@@ -176,28 +175,28 @@ int do_dir(const char *dirName, const char **param) {
 int do_file(const char *filename, const char **parms) {
     /* here comes the implementation of the new function */
     /* st is a struct of type stat for each file, in the stat struct is the information about the file */
-    struct stat *st;
+    struct stat *st = NULL;
 
     /* iterator for while loop */
     int i = 0;
 
-    /* FIXME: Das ist momentan eine Endlosschleife */
     while (parms[i] != NULL) {
+        stat(filename, st);
         if (stat(filename, st) == -1) {
-            fprintf(stderr, "Error in stat: %s", strerror(errno));
+            fprintf(stderr, "Error in stat: %s\n", strerror(errno));
 
             /* in case of failure return to the do_dir function and read in the next entry */
-            return;
+            return -1;
         }
 
-        printf("File path: %s", filename);
+        printf("File path: %s\n", filename);
 
     }
 
 
     /* assign the filestats to the current file */
     if (stat(filename, st) == -1) {
-        fprintf(stderr, "Error in stat: %s", strerror(errno));
+        fprintf(stderr, "Error in stat: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -206,10 +205,8 @@ int do_file(const char *filename, const char **parms) {
     if (S_ISDIR(st->st_mode)) {
         printf("this is a directory!\n");
     }
+
+    return 0;
 }
 
-
-//
-// Created by marcaurel on 03.03.18.
-//
 
