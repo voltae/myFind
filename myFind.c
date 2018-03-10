@@ -41,7 +41,7 @@ int do_file(const char *filename, const char **parms);
  * @param argv actions used
  * @return
  */
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
 
     /* protocols the error */
     int error;
@@ -69,14 +69,12 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             }
         }
-
     }
 
-
-    char *basePath = argv[1];
+   // const char *basePath = argv[1];
     /* call the openDirectory function for stepping though the directory */
 
-    error = do_dir(basePath, argv[2]);
+    error = do_dir(argv[1], argv + 2);
     /* log out itf an error occured */
     if (error) {
 
@@ -93,10 +91,12 @@ int do_dir(const char *dirName, const char **param) {
 
     char *filename;
 
-    /* FIXME: Don't forget the free */
-    char *basePath = malloc(sizeof(dirName));
-    char *filePath = NULL;
-
+    /* Error was produced by this line: char *basePath = malloc(sizeof(dirName)); */
+    /* basePath was f course way to short for holding the entire string, now corrected */
+    char *basePath = malloc((strlen(dirName) + 1) * sizeof(char));
+    //char *filePath = NULL;
+    char filePath[500];
+    
     /* declare a pointer to a DIR (directory datatype) */
     DIR *directory;
     /* The opendir function opens and returns a directory stream for reading the directory whose file name is dirname. The stream has type DIR */
@@ -124,13 +124,14 @@ int do_dir(const char *dirName, const char **param) {
             continue;
 
         /* create the full filepath for found file, add 2 extra spaces for  '/' and '\0' */
-        int lengthOfPath = (strlen(filename) + strlen(basePath)) + 2;
-        /* FIXME: Don't forget the free the filepath */
+        int lengthOfPath = (int)(strlen(filename) + (int)strlen(basePath) + 3);
+        /* FIXME: Don't forget the free the filepath, all work with a static char array. the error is presumable a buffer overrun in this pointer.
+         means the malloc assigment is to short. tarck that bug
         if (!(filePath = malloc(lengthOfPath * sizeof(char))))
         {
             fprintf(stderr, "Memory error: %s\n", strerror(errno));
         }
-
+         */
         strcat(filePath, basePath);
         strcat(filePath, "/");
         strcat((filePath), filename);
@@ -146,34 +147,17 @@ int do_dir(const char *dirName, const char **param) {
 
         printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
         printf("File is Directory: %s\n", (pdirent->d_type == DT_DIR)? "yes" : "no");
-        /* printf("User: [%s]", pdirent->)
-
-
-         if (pdirent->d_type == DT_DIR) {
-         filename = pdirent->d_name;
-
-         /* test the recursion , leave out the "." and ".." directory
-         if ((strcmp(filename, ".") != 0) && (strcmp(filename, "..") != 0)) {
-
-         /* TODO: replace sprintf with snprintf (Buffer overflow)
-
-         sprintf(pathCurrent, "%s/%s", basePath, filename);
-
-         /* start the recursion with each found directory
-         openDirectory(pathCurrent, NULL;
-
-         */
 
         /* free the filePath created in here */
-        free(filePath);
-        filePath = NULL;
+        //free(filePath);
+       // filePath = NULL;
+        filePath[0] = 0;
     }
 
+    /* free the outer basePath */
     free(basePath);
-
     basePath = NULL;
     closedir(directory);
-
 
     return 0;
 }
