@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0E5968EF2051986500A47848 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 0E5968EE2051986500A47848 /* main.c */; };
+		0E5968EF2051986500A47848 /* myFind.c in Sources */ = {isa = PBXBuildFile; fileRef = 0E5968EE2051986500A47848 /* myFind.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +24,7 @@
 
 /* Begin PBXFileReference section */
 		0E5968EB2051986500A47848 /* myFind */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myFind; sourceTree = BUILT_PRODUCTS_DIR; };
-		0E5968EE2051986500A47848 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		0E5968EE2051986500A47848 /* myFind.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = myFind.c; path = ../../../myFind.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +57,7 @@
 		0E5968ED2051986500A47848 /* myFind */ = {
 			isa = PBXGroup;
 			children = (
-				0E5968EE2051986500A47848 /* main.c */,
+				0E5968EE2051986500A47848 /* myFind.c */,
 			);
 			path = myFind;
 			sourceTree = "<group>";
@@ -119,7 +119,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0E5968EF2051986500A47848 /* main.c in Sources */,
+				0E5968EF2051986500A47848 /* myFind.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -49,5 +49,5 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# XCode
-XCode/
+# Leave out the Xcode Projec
+Xcode/
