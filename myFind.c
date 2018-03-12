@@ -10,6 +10,7 @@
 //* ------------------------------------------------------ includes -- */
 #include <stdio.h>
 #include <stdlib.h>     /* malloc and free */
+#include <math.h>       /* log() */
 #include <unistd.h>     /* for chdir */
 #include <stdlib.h>     /* for free */
 #include <errno.h>      /* for errno */
@@ -17,12 +18,30 @@
 #include <dirent.h>     /* for opendir */
 #include <string.h>    /* for strerror() */
 #include <sys/stat.h>
+#include <pwd.h>        /* getpwuid() */
 #include <unistd.h>
+
 
 
 /* ------------------------------------------------------- defines -----*/
 #define PATHDIVIDER "/"
+
 /* ------------------------------------------------------- functions -- */
+void printDir(void);
+
+int readUID(uid_t uid, const char *name);
+
+int do_dir(const char *dirName, const char **parms);
+
+int do_file(const char *filename, const char **parms);
+
+/* ------------------------------------------------------- enums -------*/
+typedef enum {
+    regOut, noOut, lsOut
+} output;
+typedef enum {
+    loopCont, loopExit
+} do_loop;
 
 /* ------------------------------------------------------- const char --*/
 const char *print = "-print";
@@ -32,11 +51,6 @@ const char *type = "-type";
 const char *name = "-name";
 const char *ls = "-ls";
 
-void printDir(void);
-
-int do_dir(const char *dirName, const char **parms);
-
-int do_file(const char *filename, const char **parms);
 
 /** @brief implementation of a simplified find programm
  *
@@ -74,10 +88,18 @@ int main(int argc, const char **argv) {
         }
     }
 
+    /* test if the argv[2] is NULL, call the function with argv[1] the basepath, and as argument with print */
+    if (argv[2] == NULL) {
+
+        //FIXME: the paramter is of type char **, print is only of tpye char *
+        error = do_file(argv[1], print);
+    }
+
     // const char *basePath = argv[1];
     /* call the openDirectory function for stepping though the directory */
 
     error = do_dir(argv[1], argv + 2);
+    // error = do_file(argv[1], argv[2]);
     /* log out itf an error occured */
     if (error) {
 
@@ -110,6 +132,7 @@ int do_dir(const char *dirName, const char **param) {
      * copies the most length of dirName char, buffer overflow, don't forget the place for the last terminating '\0' */
     strncpy(basePath, dirName, strlen(dirName) + 1);
 
+
     if (directory == NULL) {
         fprintf(stderr, "An error occurred during open dir: %s \n%s\n", dirName, strerror(errno));
         return -1;
@@ -120,24 +143,21 @@ int do_dir(const char *dirName, const char **param) {
         int error = 0;
         char *filename = pdirent->d_name;
 
-        /* FIXME: leave out the "." and ".." */
+        /* leave out the "." and ".." */
 
         if (!strcmp(filename, ".") || !strcmp(filename, ".."))
             continue;
 
         /* create the full filepath for found file, add 2 extra spaces for  '/' and '\0' */
-        int lengthOfPath = (int)(strlen(filename) + (int)strlen(basePath) + 2);
+        int lengthOfPath = (int) (strlen(filename) + (int) strlen(basePath) + 2);
 
-        /* FIXME: Don't forget the free the filepath, all work with a static char array. the error is presumable a buffer overrun in this pointer.
-         means the malloc assigment is to short. tarck that bug */
-        if (!(filePath = malloc(lengthOfPath * sizeof(char))))
-        {
+        if (!(filePath = malloc(lengthOfPath * sizeof(char)))) {
             fprintf(stderr, "Memory error: %s\n", strerror(errno));
         }
 
         /*  int snprintf(char *str, size_t size, const char *format, ...);  creates the path in the buffer filePath at most lengthOfPath
          * characters long, buffer overflow */
-        error = (snprintf(filePath, lengthOfPath + 2, "%s/%s", basePath, filename));
+        error = (snprintf(filePath, lengthOfPath, "%s/%s", basePath, filename));
         if (error < 0) {
             fprintf(stderr, "An error occurred, %s\n", strerror(errno));
         }
@@ -146,11 +166,12 @@ int do_dir(const char *dirName, const char **param) {
         strncat(filePath, PATHDIVIDER, strlen(PATHDIVIDER));
         strncat(filePath, filename, strlen(filename));
          */
+
         /* call the do_file function with the file path */
         do_file(filePath, param);
 
-        printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
-        printf("File is Directory: %s\n", (pdirent->d_type == DT_DIR)? "yes" : "no");
+        // printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
+        // printf("File is Directory: %s\n", (pdirent->d_type == DT_DIR)? "yes" : "no");
 
         /* free the filePath created in here */
         free(filePath);
@@ -167,38 +188,116 @@ int do_dir(const char *dirName, const char **param) {
     return 0;
 }
 
-/* TODO: Add second function for reading the directory and print out the entries in the fashion needed by entries given the application */
-/* a stub for the function directory is the pointer to the directory struct */
+/* A second function for reading the directory and print out the entries in the fashion needed by entries given the application */
 int do_file(const char *filename, const char **parms) {
     /* here comes the implementation of the new function */
     /* st is a struct of type stat for each file, in the stat struct is the information about the file */
     struct stat st;
 
+    char *userName;
+    /* variable for the final output */
+    output out = regOut;
+    do_loop looping = loopCont;
+
     /* iterator for while loop */
     int i = 0;
 
-
+    /* read out the struct for stat */
     if (stat(filename, &st) == -1) {
         fprintf(stderr, "Error in stat: %s\n", strerror(errno));
 
         /* in case of failure return to the do_dir function and read in the next entry */
         return -1;
     }
-    i++;
-    printf("File path: %s\n", filename);
+
+
+    while (parms[i] && (looping == loopCont)) {
+
+        //FIXME: SIGSEV 11
+        if ((strcmp(parms[i], print)) == 0) {
+            i++;
+        }
+
+        else if (strcmp(parms[i], name) == 0) {
+            if (parms[i + 1]) {
+                /* Kontrolliere ob parameter i+ 1 in filename enthalten ist.
+                 * extrahiere von filename (gesamter filepath nur den letzten teil)
+                 * kontrolliere ob name enthalten ist.) */
+                if (strstr(filename, parms[i + 1])) i += 2;
+
+                else looping = loopExit;
+            } else {
+                printf("Missing Argument for -name\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        else if (strcmp(parms[i], user) == 0) {
+            /* calculate the length of the given uid in characters + 2 for the terminating 0, note log is natural, log10 is log based 10 */
+            int userLength = (floor(log10(st.st_uid)) + 2);
+            /* allocate the char string for the uid */
+            char *userUIDString = malloc(userLength * sizeof(char));
+            /* write the number as string, to be comparable with parameter char */
+            snprintf(userUIDString, userLength, "%u", st.st_uid);
+
+            if (parms[i + 1]) {
+
+                if (((strcmp(userUIDString, parms[i + 1])) == 0) || readUID(st.st_uid, parms[i + 1]))
+                {
+                    i += 2;
+                    free(userUIDString);
+                }
+                else
+                {
+                    looping = loopExit;
+                    out = noOut;
+                    free(userUIDString);
+                }
+            }
+            else {
+                printf("Missing Argument for -name\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        else if (strcmp(parms[i], type)) {
+            /*Check on type */
+        }
+
+        else if (strcmp(parms[i], ls)) {
+            out = lsOut;
+            i++;
+
+        }
+    }
+
+    if (out == regOut) {
+        printf("File path: %s\n", filename);
+    }
+    else if (out == lsOut) {
+        printf("File formatted ls out: %s\n", filename);
+    }
+
 
 
     if (S_ISDIR(st.st_mode)) {
-        printf("this is a directory!\n");
-        /* call do_dir with this filempath to start a new recusrion to step in this directory */
-        do_dir(filename, parms);
+//  printf("this is a directory!\n");
+/* call do_dir with this filempath to start a new recusrion to step in this directory */
+        do_dir(filename, parms
+        );
 
     } else {
-        printf("this is a regular file!\n");
+//  printf("this is a regular file!\n");
     }
-    printf("Uid: %d\n", st.st_uid);
+// printf("Uid: %d\n", st.st_uid);
 
     return 0;
+
 }
 
+int readUID(uid_t uid, const char *name) {
+    struct passwd *pwd = getpwuid(uid);
+
+    return !(strcmp(name, pwd->pw_name));
+}
 
