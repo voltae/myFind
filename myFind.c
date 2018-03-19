@@ -58,7 +58,7 @@ const char *ls = "-ls";
  *
  * @param argc Number of arguments
  * @param argv actions used
- * @return
+ * @return 0 if all is correct, in failure chase report the error.
  */
 int main(int argc, const char **argv) {
     
@@ -188,7 +188,6 @@ int do_file(const char *filename, const char **parms) {
     /* st is a struct of type stat for each file, in the stat struct is the information about the file */
     struct stat st;
     
-    char *userName;
     /* variable for the final output */
     output out = regOut;
     do_loop looping = loopCont;
@@ -196,8 +195,8 @@ int do_file(const char *filename, const char **parms) {
     /* iterator for while loop */
     int i = 0;
     
-    /* read out the struct for stat */
-    if (stat(filename, &st) == -1) {
+    /* read out the struct for stat , use lstat for not trapping into a link circle */
+    if (lstat(filename, &st) == -1) {
         fprintf(stderr, "Error in stat: %s\n", strerror(errno));
         
         /* in case of failure return to the do_dir function and read in the next entry */
@@ -207,16 +206,28 @@ int do_file(const char *filename, const char **parms) {
     do
     {
         /* Lara did this */
-        if (!parms[i]);
-        else if (!strcmp(parms[i], print)) i++;
+        /* if the first action is null, not given, leave the loop
+         * and print the entry out as same as -print. This is not necessary, the loop will
+         *stop anyway because parms[0] == NULL, but more readable */
+        if (parms[0]) looping = loopExit;
         
+        /* if the action -print is given, step one element in the action further,
+         * it might followed by -ls */
+        else if (!strcmp(parms[i], print)) i++;
+        /* if (parms[i])
+        else if (!strcmp(parms[i], print)) i++; */
+        
+        /* if -name is found, step through following cases: */
         else if (!strcmp(parms[i], name))
         {
+            /* if is followed by a parameter, take this as valid name */
             if (parms[i + 1]) {
+                /* if found a name - match in path */
                 if (isNameInFilename(filename, parms[i+1])) i += 2;
+                /* if not, leave the loop, with no output */
                 else { looping = loopExit; out = noOut; }
-                
             }
+            /* if no parameter was found, print the error, no argument for name found */
             else
             {
                 printf("Missing Argument for -name\n");
@@ -224,6 +235,7 @@ int do_file(const char *filename, const char **parms) {
             }
         }
         
+        /* if the action -user is found, step through following cases: */
         else if (strcmp(parms[i], user) == 0) {
             /* calculate the length of the given uid in characters + 2 for the terminating 0, note log is natural, log10 is log based 10 */
             int userLength = (floor(log10(st.st_uid)) + 2);
@@ -271,7 +283,6 @@ int do_file(const char *filename, const char **parms) {
     }
     
     
-    
     if (S_ISDIR(st.st_mode)) {
         //  printf("this is a directory!\n");
         /* call do_dir with this filempath to start a new recusrion to step in this directory */
@@ -299,10 +310,14 @@ char *isNameInFilename (const char *filePath, const char *name)
 {
     
     const char *fileName;
-    //if (fileName = strrchr(filePath, '/')
-    if(strstr(filePath, "/"))
+    
+    /* if the path does not contain any '/' the filepath should be the filename,
+     * in order to find the name in the root path as well */
+    if (!(fileName = strrchr(filePath, '/')))
+        fileName = filePath;
+   /* if(strstr(filePath, "/"))
         fileName=strrchr(filePath, '/')+1;
-    else fileName=filePath;
+    else fileName=filePath; */
     
     return strstr(fileName, name);
 }
