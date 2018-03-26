@@ -20,18 +20,24 @@
 #include <sys/stat.h>
 #include <pwd.h>        /* getpwuid() */
 #include <unistd.h>
-
-
+#include <grp.h>        // getgrgid() get group name
+#include <time.h>       // for time conversion
 
 /* ------------------------------------------------------- defines -----*/
 #define PATHDIVIDER "/"
+#define FUENFHUNDERT 500 // TODO: Replace the 500 with dynamic allocation
 
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
 
 int readUID(uid_t uid, const char *name);
 
+char *getNameFromUID(uid_t uid);
+char *getNameFromGID(gid_t gid);
+
 char *isNameInFilename (const char *filePath, const char *name);
+
+void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePath);
 
 int do_dir(const char *dirName, const char **parms);
 
@@ -205,17 +211,30 @@ int do_file(const char *filename, const char **parms) {
     
     do
     {
-        /* Lara did this */
+        /* Valentin did this */
         /* if the first action is null, not given, leave the loop
          * and print the entry out as same as -print. This is not necessary, the loop will
          *stop anyway because parms[0] == NULL, but more readable */
-        if (parms[0]) looping = loopExit;
+        /* We don't need this case at all, just delete it and make the next as if */
+        if (!parms[0]) looping = loopExit;
         
         /* if the action -print is given, step one element in the action further,
          * it might followed by -ls */
-        else if (!strcmp(parms[i], print)) i++;
-        /* if (parms[i])
-        else if (!strcmp(parms[i], print)) i++; */
+       // else if (!strcmp(parms[i], print)) i++;
+        
+        else if (!strcmp(parms[i], print))
+        {
+            printf("%s", filename);
+            i++;
+            out = noOut;
+        }
+        
+        else if (!strcmp(parms[i], ls))
+        {
+            extendedFileOutputFromStat(&st, filename);
+            i++;
+            out = noOut;
+        }
         
         /* if -name is found, step through following cases: */
         else if (!strcmp(parms[i], name))
@@ -286,8 +305,7 @@ int do_file(const char *filename, const char **parms) {
     if (S_ISDIR(st.st_mode)) {
         //  printf("this is a directory!\n");
         /* call do_dir with this filempath to start a new recusrion to step in this directory */
-        do_dir(filename, parms
-               );
+        do_dir(filename, parms);
         
     }
     else
@@ -306,6 +324,16 @@ int readUID(uid_t uid, const char *name) {
     return !(strcmp(name, pwd->pw_name));
 }
 
+char *getNameFromUID(uid_t uid)
+{
+    struct passwd *pwd = getpwuid(uid);
+    return pwd->pw_name;
+}
+char *getNameFromGID(gid_t gid)
+{
+    struct group *pwd = getgrgid(gid);
+    return pwd->gr_name;
+}
 char *isNameInFilename (const char *filePath, const char *name)
 {
     
@@ -313,12 +341,41 @@ char *isNameInFilename (const char *filePath, const char *name)
     
     /* if the path does not contain any '/' the filepath should be the filename,
      * in order to find the name in the root path as well */
-    if (!(fileName = strrchr(filePath, '/')))
-        fileName = filePath;
-   /* if(strstr(filePath, "/"))
+   if(strstr(filePath, "/"))
         fileName=strrchr(filePath, '/')+1;
-    else fileName=filePath; */
+    else fileName=filePath;
     
     return strstr(fileName, name);
+}
+
+void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePath)
+{
+    // get the inode number
+    long int inodeNr = fileStat->st_ino;
+    // get the size of the pointer filestat
+    int sizePointer = sizeof(fileStat);
+    // number of hardlinks in inode
+    int linkAmount = fileStat->st_nlink;
+    // user Id  owner
+    int userID = fileStat->st_uid;
+    char *userName = getNameFromUID(userID); // TODO: Get the username from getpwnam
+    // group ID owner
+    int groupID = fileStat->st_gid;
+    char *groupName = getNameFromGID(groupID); // TODO: Get the groupName from getpwnam
+    // file length
+    long int fileLength = fileStat->st_size;
+    // time of last modification
+    time_t timeLastMod = fileStat->st_mtime;
+    // TODO: format time
+    char *timeFormatted = malloc(FUENFHUNDERT * sizeof(char));
+    
+    struct tm *localeTime = localtime(&timeLastMod);
+    strftime(timeFormatted, FUENFHUNDERT, "%B %d %H:%M", localeTime);
+    
+    // Permissions
+    mode_t permissions = fileStat->st_mode;
+    printf("%lu %d %ld %d %s %s %lu %s\n", inodeNr, sizePointer, permissions, linkAmount, userName, groupName, fileLength, timeFormatted);
+    free(timeFormatted);
+
 }
 
