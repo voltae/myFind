@@ -32,8 +32,12 @@ void printDir(void);
 
 int readUID(uid_t uid, const char *name);
 
+/* prototypes for the ls functionality */
 char *getNameFromUID(uid_t uid);
+
 char *getNameFromGID(gid_t gid);
+
+char *combineFilePermissions (mode_t fileMode);
 
 char *isNameInFilename (const char *filePath, const char *name);
 
@@ -158,6 +162,7 @@ int do_dir(const char *dirName, const char **param) {
         /*  int snprintf(char *str, size_t size, const char *format, ...);  creates the path in the buffer filePath at most lengthOfPath
          * characters long, buffer overflow */
         error = (snprintf(filePath, lengthOfPath, "%s/%s", basePath, filename));
+        
         if (error < 0) {
             fprintf(stderr, "An error occurred, %s\n", strerror(errno));
         }
@@ -224,7 +229,7 @@ int do_file(const char *filename, const char **parms) {
         
         else if (!strcmp(parms[i], print))
         {
-            printf("%s", filename);
+            printf("%s\n", filename);
             i++;
             out = noOut;
         }
@@ -374,8 +379,42 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     
     // Permissions
     mode_t permissions = fileStat->st_mode;
-    printf("%lu %d %ld %d %s %s %lu %s\n", inodeNr, sizePointer, permissions, linkAmount, userName, groupName, fileLength, timeFormatted);
+    char *permissionsChar = combineFilePermissions(permissions);
+    
+    printf("%lu\t %d \t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, sizePointer, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
     free(timeFormatted);
-
+    free(permissionsChar);
 }
-
+char *combineFilePermissions (mode_t fileMode)
+{
+    // output variable
+    char *permissions = malloc(10 * sizeof(char));
+    // counter
+    int i = 0;
+    // Test if file is directory, or Link
+    if (fileMode & S_IFDIR) permissions[i++] = 'd';
+    else if (fileMode & S_IFLNK) permissions[i++] = 'l';
+    else permissions[i++] = '-';
+    permissions[i++] = (fileMode & S_IRUSR) ? 'r' : '-';
+    permissions[i++] = (fileMode & S_IWUSR) ? 'w' : '-';
+    if ((fileMode & S_IXUSR) && (fileMode & S_ISUID)) permissions[i++] = 's';
+    else if (fileMode & S_ISUID) permissions[i++] = 'S';
+    else if (fileMode & S_IXUSR) permissions[i++] = 'x';
+    else permissions[i++] = '-';
+    
+    permissions[i++] = (fileMode & S_IRGRP) ? 'r' : '-';
+    permissions[i++] = (fileMode & S_IWGRP) ? 'w' : '-';
+    if ((fileMode & S_IXGRP) && (fileMode & S_ISGID)) permissions[i++] = 's';
+    else if (fileMode & S_ISGID) permissions[i++] = 'S';
+    else if (fileMode & S_IXGRP) permissions[i++] = 'x';
+    else permissions[i++] = '-';
+    
+    permissions[i++] = (fileMode & S_IROTH) ? 'r' : '-';
+    permissions[i++] = (fileMode & S_IWOTH) ? 'w' : '-';
+    if ((fileMode & S_IXOTH) && (fileMode & S_ISVTX)) permissions[i++] = 't';
+    else if (fileMode & S_ISVTX) permissions[i++] = 'T';
+    else if (fileMode & S_IXOTH) permissions[i++] = 'x';
+   
+    permissions[i] = 0;
+    return permissions;
+}
