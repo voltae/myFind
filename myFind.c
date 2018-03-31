@@ -25,6 +25,7 @@
 
 /* ------------------------------------------------------- defines -----*/
 #define PATHDIVIDER "/"
+#define UID_LIMIT 65535
 #define FUENFHUNDERT 500 // TODO: Replace the 500 with dynamic allocation
 
 /* ------------------------------------------------------- functions -- */
@@ -33,7 +34,7 @@ void printDir(void);
 int readUID(uid_t uid, const char *name);
 
 /* prototypes for the ls functionality */
-char *getNameFromUID(uid_t uid);
+int getNameFromUID(uid_t uid, char **userName);
 
 char *getNameFromGID(gid_t gid);
 
@@ -329,10 +330,26 @@ int readUID(uid_t uid, const char *name) {
     return !(strcmp(name, pwd->pw_name));
 }
 
-char *getNameFromUID(uid_t uid)
+int getNameFromUID(uid_t uid, char **userName)
 {
-    struct passwd *pwd = getpwuid(uid);
-    return pwd->pw_name;
+    errno = 0;
+    struct passwd *pwd;
+
+        /* Applications wishing to check for error situations should set errno to 0 before calling getpwuid().
+     * If getpwuid() returns a null pointer and errno is set to non-zero, an error occurred. */
+    if ((pwd = getpwuid(uid)))
+    {
+        *userName = pwd->pw_name;
+    }
+    else
+    {
+        // TODO: Create Dynamic length of userNameTemp;
+        char *userNameTemp = malloc(7 * sizeof(char));
+        snprintf(userNameTemp, 7, "%u", uid);
+        userNameTemp[6] = 0;
+        *userName = userNameTemp;
+    }
+    return 0;
 }
 char *getNameFromGID(gid_t gid)
 {
@@ -357,21 +374,22 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
 {
     // get the inode number
     long int inodeNr = fileStat->st_ino;
-    // get the size of the pointer filestat
-    int sizePointer = sizeof(fileStat);
+    // get the size of the pointer filestat // TODO: Gives exact the double of the find command!
+    blksize_t recordSize = fileStat->st_blocks;
     // number of hardlinks in inode
     int linkAmount = fileStat->st_nlink;
     // user Id  owner
     int userID = fileStat->st_uid;
-    char *userName = getNameFromUID(userID); // TODO: Get the username from getpwnam
+    char *userName = NULL;
+    int returnValue = getNameFromUID(userID, &userName);
     // group ID owner
     int groupID = fileStat->st_gid;
-    char *groupName = getNameFromGID(groupID); // TODO: Get the groupName from getpwnam
+    char *groupName = getNameFromGID(groupID);
     // file length
     long int fileLength = fileStat->st_size;
     // time of last modification
     time_t timeLastMod = fileStat->st_mtime;
-    // TODO: format time
+    // TODO: Change the FUENFHUNDERT to dynamic value
     char *timeFormatted = malloc(FUENFHUNDERT * sizeof(char));
     
     struct tm *localeTime = localtime(&timeLastMod);
@@ -381,9 +399,10 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     mode_t permissions = fileStat->st_mode;
     char *permissionsChar = combineFilePermissions(permissions);
     
-    printf("%lu\t %d \t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, sizePointer, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
+    printf("%lu\t %4lu \t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, recordSize, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
     free(timeFormatted);
     free(permissionsChar);
+
 }
 char *combineFilePermissions (mode_t fileMode)
 {
@@ -392,6 +411,7 @@ char *combineFilePermissions (mode_t fileMode)
     // counter
     int i = 0;
     // Test if file is directory, or Link
+    // TODO: Does make every file as link, except the directory
     if (fileMode & S_IFDIR) permissions[i++] = 'd';
     else if (fileMode & S_IFLNK) permissions[i++] = 'l';
     else permissions[i++] = '-';
