@@ -26,6 +26,21 @@
 /* ------------------------------------------------------- defines -----*/
 #define PATHDIVIDER "/"
 #define FUENFHUNDERT 500 // TODO: Replace the 500 with dynamic allocation
+#define PROGRAM_NAME "myFind:"
+
+/* ------------------------------------------------------- enums -------*/
+typedef enum {
+    regOut, noOut, lsOut
+} output;
+typedef enum {
+    loopCont, loopExit
+} do_loop;
+
+typedef enum mybool {
+    FALSE, TRUE
+} mybool;
+
+typedef enum nameFound {FOUND, NOTFOUND} nameFound;
 
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
@@ -41,21 +56,15 @@ char *combineFilePermissions (mode_t fileMode);
 
 char *isNameInFilename (const char *filePath, const char *name);
 
+/* check the file type */
+mybool isFileType (const char argument, struct stat st);
+
 void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePath);
 
 int do_dir(const char *dirName, const char **parms);
 
 int do_file(const char *filename, const char **parms);
 
-/* ------------------------------------------------------- enums -------*/
-typedef enum {
-    regOut, noOut, lsOut
-} output;
-typedef enum {
-    loopCont, loopExit
-} do_loop;
-
-typedef enum nameFound {FOUND, NOTFOUND} nameFound;
 
 /* ------------------------------------------------------- const char --*/
 const char *print = "-print";
@@ -80,7 +89,7 @@ int main(int argc, const char **argv) {
     
     /* if no arguments are provided, print out a use message, and exit with failure */
     if (argc < 2) {
-        printf("myFind: Usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]\n");
+        printf("%s Usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls]\n", PROGRAM_NAME);
         exit(EXIT_FAILURE);
     }
     
@@ -90,14 +99,14 @@ int main(int argc, const char **argv) {
         if (argv[i][0] == '-') {
             if (strcmp(argv[i], print) && strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) &&
                 strcmp(argv[i], name) && strcmp(argv[i], nouser) && (strcmp(argv[i], ls))) {
-                printf("myFind: Usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls] [-nouser]\n");
+                printf("%s Usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls] [-nouser]\n", PROGRAM_NAME);
                 exit(EXIT_FAILURE);
             }
         }
         /* if a valid action is found -name, -type but the next argument is missing, print out an error message. */
         if (!(strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) && strcmp(argv[i], name))) {
             if (argc == i + 1) {
-                printf("myFind: Missing argument for %s\n", argv[i]);
+                printf("%s Missing argument for %s\n",PROGRAM_NAME, argv[i]);
                 exit(EXIT_FAILURE);
             }
         }
@@ -106,7 +115,7 @@ int main(int argc, const char **argv) {
         {
             if (argv[i+2][0] != '-')
             {
-                fprintf(stderr, "myFind: paths must precede expression: %s\n", argv[i+2]);
+                fprintf(stderr, "%s paths must precede expression: %s\n", PROGRAM_NAME, argv[i+2]);
                 exit(EXIT_FAILURE);
             }
         }
@@ -115,7 +124,7 @@ int main(int argc, const char **argv) {
         {
             if (argv[i+2][0] != '-')
             {
-                fprintf(stderr, "myFind: user must precede expression: %s\n", argv[i+2]);
+                fprintf(stderr, "%s user must precede expression: %s\n", PROGRAM_NAME, argv[i+2]);
                 exit(EXIT_FAILURE);
             }
         }
@@ -124,7 +133,7 @@ int main(int argc, const char **argv) {
         {
             if (argv[i+2][0] != '-')
             {
-                fprintf(stderr, "myFind: %s: unknown primary or operator\n", argv[i+2]);
+                fprintf(stderr, "%s %s: unknown primary or operator\n", PROGRAM_NAME, argv[i+2]);
                 exit(EXIT_FAILURE);
             }
         }
@@ -132,33 +141,33 @@ int main(int argc, const char **argv) {
         else if ((!(strcmp(argv[i], print)) && argv[i+1]) || (!(strcmp(argv[i], ls)) && argv[i+1]) || (!(strcmp(argv[i], nouser)) && argv[i+1]))
         {
             {
-                fprintf(stderr, "myFind: %s: unknown primary or operator\n", argv[i+1]);
+                fprintf(stderr, "%s %s: unknown primary or operator\n", PROGRAM_NAME, argv[i+1]);
                 exit(EXIT_FAILURE);
             }
         }
         
         /* -type is followed ony by [bcdpfls] */
-         else if (!(strcmp(argv[i], type)))
-         {
-             nameFound allowedCharFound = NOTFOUND;
-             int j = 0;
-             char *allowedChar = NULL;
-             char allowedChars[7] = "bcdpfls";
-             do
-             {
-                 allowedChar = strchr(argv[i+1], allowedChars[j++]);
-                 if (!allowedChar) allowedCharFound = NOTFOUND;
-                 else allowedCharFound = FOUND;
+        else if (!(strcmp(argv[i], type)))
+        {
+            nameFound allowedCharFound = NOTFOUND;
+            int j = 0;
+            char *allowedChar = NULL;
+            char allowedChars[7] = "bcdpfls";
+            do
+            {
+                allowedChar = strchr(argv[i+1], allowedChars[j++]);
+                if (!allowedChar) allowedCharFound = NOTFOUND;
+                else allowedCharFound = FOUND;
             } while (allowedCharFound == NOTFOUND && j < 7);
-             
-             if (allowedCharFound == NOTFOUND)
-             {
-                 printf("myFind: -type: %s: unknown type\n", argv[i+1]);
-                 exit(EXIT_FAILURE);
-             }
+            
+            if (allowedCharFound == NOTFOUND)
+            {
+                printf("%s -type: %s: unknown type\n",PROGRAM_NAME, argv[i+1]);
+                exit(EXIT_FAILURE);
+            }
         }
         
-                  
+        
     }
     
     /* call the openDirectory function for stepping though the directory */
@@ -196,7 +205,7 @@ int do_dir(const char *dirName, const char **param) {
     
     
     if (directory == NULL) {
-        fprintf(stderr, "myFind: An error occurred during open dir: %s \n%s\n", dirName, strerror(errno));
+        fprintf(stderr, "%s An error occurred during open dir: %s \n%s\n", PROGRAM_NAME, dirName, strerror(errno));
         return -1;
     }
     
@@ -214,7 +223,7 @@ int do_dir(const char *dirName, const char **param) {
         int lengthOfPath = (int) (strlen(filename) + (int) strlen(basePath) + 2);
         
         if (!(filePath = malloc(lengthOfPath * sizeof(char)))) {
-            fprintf(stderr, "Memory error: %s\n", strerror(errno));
+            fprintf(stderr, "%s Memory error: %s\n", PROGRAM_NAME, strerror(errno));
         }
         
         /*  int snprintf(char *str, size_t size, const char *format, ...);  creates the path in the buffer filePath at most lengthOfPath
@@ -222,7 +231,7 @@ int do_dir(const char *dirName, const char **param) {
         error = (snprintf(filePath, lengthOfPath, "%s/%s", basePath, filename));
         
         if (error < 0) {
-            fprintf(stderr, "An error occurred, %s\n", strerror(errno));
+            fprintf(stderr, "%s An error occurred, %s\n", PROGRAM_NAME, strerror(errno));
         }
         
         /* call the do_file function with the file path */
@@ -261,7 +270,7 @@ int do_file(const char *filename, const char **parms) {
     
     /* read out the struct for stat , use lstat for not trapping into a link circle */
     if (lstat(filename, &st) == -1) {
-        fprintf(stderr, "Error in stat: %s\n", strerror(errno));
+        fprintf(stderr, "%s Error in stat: %s\n", PROGRAM_NAME, strerror(errno));
         
         /* in case of failure return to the do_dir function and read in the next entry */
         return -1;
@@ -306,7 +315,7 @@ int do_file(const char *filename, const char **parms) {
             /* if no parameter was found, print the error, no argument for name found */
             else
             {
-                printf("myFind: Missing Argument for \"-name\"\n");
+                printf("%s Missing Argument for \"-name\"\n", PROGRAM_NAME);
                 exit(EXIT_FAILURE);
             }
         }
@@ -349,24 +358,20 @@ int do_file(const char *filename, const char **parms) {
             }
             else
             {
-                printf("myFind: Missing Argument for \"-name\"\n");
+                printf("%s Missing Argument for \"-name\"\n", PROGRAM_NAME);
                 exit(EXIT_FAILURE);
             }
         }
-        
+        /* is next parameter -type?
+         * if yes, check the its argument */
         else if (!strcmp(parms[i], type))
         {
-            /*Check on type
-             *  b   ... block
-             *  c   ... character unbuffered special
-             *  d   ... directory
-             *  p   ... named pipe  (FIFO)
-             *  f   ... regular file
-             *  l   ... symolic link
-             *  s   ... socket
-             */
-            
-            /* increment the counter */
+            /** returns true if the argument is a correct typ */
+            mybool isValidType = isFileType(*parms[i+1], st);
+            if (isValidType) {
+                printf("%s", filename);
+                out = noOut;
+            }
             i++;
         }
         
@@ -535,4 +540,58 @@ char *combineFilePermissions (mode_t fileMode)
     
     permissions[i] = 0;
     return permissions;
+}
+
+mybool isFileType (const char argument, struct stat st)
+{
+    /*Check on type
+     *  b   ... block
+     *  c   ... character unbuffered special
+     *  d   ... directory
+     *  p   ... named pipe  (FIFO)
+     *  f   ... regular file
+     *  l   ... symolic link
+     *  s   ... socket
+     */
+    /* search for block files */
+    if (argument == 'b')
+    {
+        /* found a block file */
+        if (st.st_mode & S_IFBLK) return TRUE;
+    }
+    /* search for character unbuffered special files */
+    else if (argument == 'c')
+    {
+        /* found a character unbuffered special file */
+        if (st.st_mode & S_IFCHR) return TRUE;
+        
+    }
+    /* search for a directory */
+    else if (argument == 'd')
+    {
+        if (st.st_mode & S_IFDIR) return TRUE;
+        
+    }
+    /* search for a FIFO (Pipe) */
+    else if (argument == 'p')
+    {
+        if (st.st_mode & S_IFIFO) return TRUE;
+    }
+    /* search for a regular file */
+    else if (argument == 'f')
+    {
+        if (st.st_mode & S_IFREG) return TRUE;
+    }
+    /* search for a symbolic link  */
+    else if (argument == 'l')
+    {
+        if (st.st_mode & S_IFLNK) return TRUE;
+    }
+    /* search for a socket */
+    else if (argument == 's')
+    {
+        if (st.st_mode & S_IFSOCK) return TRUE;
+    }
+    /* found nothing reurn false */
+    return FALSE;
 }
