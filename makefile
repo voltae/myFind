@@ -5,14 +5,14 @@ LDLIBS = -lm
 OBJ = myFind.o
 
 %.o: %.c
-        $(CC) $(CFLAGS) -c $<
+$(CC) $(CFLAGS) -c -g $<
 
 all: myFind
 
 myFind: $(OBJ)
-        $(CC) -o $@ $(OBJ) $(LDLIBS)
+$(CC) -o $@ $(OBJ) $(LDLIBS)
 
 .phony : clean
 
 clean:
-        rm -f *.o myFind
+rm -f *.o myFind

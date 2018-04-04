@@ -24,7 +24,6 @@
 #include <time.h>       // for time conversion
 
 /* ------------------------------------------------------- defines -----*/
-#define PATHDIVIDER "/"
 #define FUENFHUNDERT 500 // TODO: Replace the 500 with dynamic allocation
 #define PROGRAM_NAME "myFind:"
 
@@ -45,7 +44,8 @@ typedef enum nameFound {FOUND, NOTFOUND} nameFound;
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
 
-int readUID(uid_t uid, const char *name);
+int getUIDFromName(const char *name);
+int getUIDFromNumber(int number);
 
 /* prototypes for the ls functionality */
 char *getNameFromUID(uid_t uid);
@@ -65,6 +65,7 @@ int do_dir(const char *dirName, const char **parms);
 
 int do_file(const char *filename, const char **parms);
 
+mybool isStringOnlyNumbers (const char *testString);
 
 /* ------------------------------------------------------- const char --*/
 const char *print = "-print";
@@ -95,10 +96,11 @@ int main(int argc, const char **argv) {
     
     /* validate the actions of myFind step by step in a loop */
     for (int i = 0; i < argc; ++i) {
-        /* wheed out every -commmand that is not allowd */
+        /* wheed out every -commmand that is not allowed */
         if (argv[i][0] == '-') {
             if (strcmp(argv[i], print) && strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) &&
-                strcmp(argv[i], name) && strcmp(argv[i], nouser) && (strcmp(argv[i], ls))) {
+                strcmp(argv[i], name) && strcmp(argv[i], nouser) && (strcmp(argv[i], ls)))
+            {
                 printf("%s Usage: <file or directory> [-user <name>] [-name <pattern>] [-type [bcdpfls] [-print] [-ls] [-nouser]\n", PROGRAM_NAME);
                 exit(EXIT_FAILURE);
             }
@@ -146,7 +148,7 @@ int main(int argc, const char **argv) {
             }
         }
         
-        /* -type is followed ony by [bcdpfls] */
+        /* -type is followed only by [bcdpfls] */
         else if (!(strcmp(argv[i], type)))
         {
             nameFound allowedCharFound = NOTFOUND;
@@ -205,7 +207,7 @@ int do_dir(const char *dirName, const char **param) {
     
     
     if (directory == NULL) {
-        fprintf(stderr, "%s An error occurred during open dir: %s \n%s\n", PROGRAM_NAME, dirName, strerror(errno));
+        fprintf(stderr, "%s %s: %s\n", PROGRAM_NAME, dirName, strerror(errno));
         return -1;
     }
     
@@ -270,7 +272,7 @@ int do_file(const char *filename, const char **parms) {
     
     /* read out the struct for stat , use lstat for not trapping into a link circle */
     if (lstat(filename, &st) == -1) {
-        fprintf(stderr, "%s Error in stat: %s\n", PROGRAM_NAME, strerror(errno));
+        fprintf(stderr, "%s %s: %s\n", PROGRAM_NAME, filename, strerror(errno));
         
         /* in case of failure return to the do_dir function and read in the next entry */
         return -1;
@@ -323,37 +325,38 @@ int do_file(const char *filename, const char **parms) {
         /* if the action -user is found, step through following cases: */
         else if (!strcmp(parms[i], user))
         {
-            char *userUIDString;
-            /* calculate the length of the given uid in characters + 2 for the terminating 0, note log is natural, log10 is log based 10 */
-            /* this works only if the entry in st.uid is > 0 */
-            if (st.st_uid > 0)
-            {
-                int userLength = (floor(log10(st.st_uid)) + 2);
-                /* allocate the char string for the uid */
-                userUIDString = malloc(userLength * sizeof(char));
-                /* write the number as string, to be comparable with parameter char */
-                snprintf(userUIDString, userLength, "%u", st.st_uid);
-            }
-            /* initialize userUIDString with '0' */
-            else
-            {
-                userUIDString = malloc(2 * sizeof(char));
-                userUIDString[0] = '0';
-                userUIDString[1] = 0;
-            }
             if (parms[i + 1])
             {
                 /* Compare the user string with the entry from system known user. Caution, the entry can differ from a known user */
-                if (((strcmp(userUIDString, parms[i + 1])) == 0) || readUID(st.st_uid, parms[i + 1]))
+                /* Better approach get user uid from passwd with the user name as char and compare with s.st_uid (int) */
+                
+                /* user could be a uid number as well, so test the string if contains only numbers.
+                 * in this case, feed in the int to the function getUIDFromNumber. */
+                /* True if the file belongs to the user uname.  If uname is numeric
+                 and there is no such user name, then uname    is treated as a    user
+                 ID. */
+                
+                /* first treat the parameter as name */
+                /* The parameter after -user is a username test it */
+                int uuidTest = atoi(parms[i+1]);
+                
+                printf("st: %d, nameID: %d, parms: %s, atoi: %d, getuid: %d", st.st_uid,  getUIDFromName (parms[i+1]), parms[i+1], uuidTest, getUIDFromNumber(uuidTest));
+                
+                if (getUIDFromName(parms[i+1])== -1 && ((isStringOnlyNumbers(parms[i+1]) == TRUE) && (getUIDFromNumber(uuidTest)) == -1))  {
+                    fprintf(stderr, "myFind: \"%s\" is not the name of a known user.\n", parms[i+1]);
+                    exit(EXIT_FAILURE);
+                }
+                
+                if ((st.st_uid == getUIDFromName (parms[i+1]) || ((isStringOnlyNumbers(parms[i+1]) == TRUE) && getUIDFromNumber(uuidTest) == st.st_uid)))
                 {
                     i += 2;
-                    free(userUIDString);
                 }
+                
                 else
                 {
-                    looping = loopExit;
+                    looping = loopCont;
                     out = noOut;
-                    free(userUIDString);
+                    i +=2;
                 }
             }
             else
@@ -368,8 +371,10 @@ int do_file(const char *filename, const char **parms) {
         {
             /** returns true if the argument is a correct typ */
             mybool isValidType = isFileType(*parms[i+1], st);
-            if (isValidType) {
-                printf("%s", filename);
+            if (isValidType) out = out;
+            else
+            {
+                looping = loopExit;
                 out = noOut;
             }
             i++;
@@ -406,22 +411,27 @@ int do_file(const char *filename, const char **parms) {
     return 0;
     
 }
-/* read the user entry from system library. Check if the entry exists anyway */
-int readUID(uid_t uid, const char *name) {
-    struct passwd *pwd = getpwuid(uid);
+/** read the user entry from system library. Check if the entry exists anyway
+ * takes a char * with the user name
+ * returns the uid number datatype uid_t (which is unsigned int) */
+int getUIDFromName(const char *name) {
+    struct passwd *pwd = getpwnam(name);
     
+    if (pwd) return pwd->pw_uid;
+    
+    return -1;
+}
+
+/** read the user entry from system library. Check if the entry exists anyway
+ * takes a number of type uid_t
+ * returns the uid number datatype uid_t */
+int getUIDFromNumber(int number) {
+    struct passwd *pwd = getpwuid(number);
+    printf("%d, %p", number, pwd);
     /* User is not in the Struct list. Leave the program, no further search is needed*/
-    if (pwd == NULL)
-    {
-        fprintf(stderr, "myFind: \"%s\" is not the name of a known user.\n", name);
-        exit(EXIT_FAILURE);
-    }
-    /* User is in the struct list */
-    /* test if the name and the user matches */
-    else if (!(strcmp(name, pwd->pw_name)))
-        return 1;
-    else
-        return 0;
+    if (pwd)  return pwd->pw_uid;
+    
+    return -1;
 }
 
 char *getNameFromUID(uid_t uid)
@@ -472,6 +482,21 @@ char *isNameInFilename (const char *filePath, const char *name)
     else fileName=filePath;
     
     return strstr(fileName, name);
+}
+
+/** hepler function, test if a char* is numeric only
+ * takes a char pointer with text.
+ * returns TRUE if only numers are found, FALSE in the case a Letter is in the char */
+mybool isStringOnlyNumbers (const char *testString)
+{
+    mybool isNumberOnly = FALSE;
+    for (unsigned int i = 0; i < strlen(testString); i++)
+    {
+        if (testString[i] < 48 || testString[i] > 57)
+            isNumberOnly = FALSE;
+        else isNumberOnly = TRUE;
+    }
+    return isNumberOnly;
 }
 
 void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePath)
@@ -554,44 +579,51 @@ mybool isFileType (const char argument, struct stat st)
      *  s   ... socket
      */
     /* search for block files */
-    if (argument == 'b')
+    mybool returnValue = FALSE;
+    
+    switch (argument)
     {
-        /* found a block file */
-        if (st.st_mode & S_IFBLK) return TRUE;
+            /* found a block file */
+        case 'b':
+            if (st.st_mode & S_IFBLK) returnValue = TRUE;
+            break;
+            
+            /* search for character unbuffered special files */
+        case 'c':
+            /* found a character unbuffered special file */
+            if (st.st_mode & S_IFCHR) returnValue = TRUE;
+            break;
+            
+            /* search for a directory */
+        case 'd':
+            if (st.st_mode & S_IFDIR) returnValue = TRUE;
+            break;
+            
+            /* search for a FIFO (Pipe) */
+        case 'p':
+            if (st.st_mode & S_IFIFO) returnValue = TRUE;
+            break;
+            
+            /* search for a regular file */
+        case 'f':
+            if (st.st_mode & S_IFREG) returnValue = TRUE;
+            break;
+            
+            /* search for a symbolic link  */
+        case 'l':
+            if (st.st_mode & S_IFLNK) returnValue = TRUE;
+            break;
+            
+            /* search for a socket */
+        case 's':
+            if (st.st_mode & S_IFSOCK) returnValue = TRUE;
+            break;
+            
+            /* found nothing return false */
+        default:
+            returnValue = FALSE;
+            break;
     }
-    /* search for character unbuffered special files */
-    else if (argument == 'c')
-    {
-        /* found a character unbuffered special file */
-        if (st.st_mode & S_IFCHR) return TRUE;
-        
-    }
-    /* search for a directory */
-    else if (argument == 'd')
-    {
-        if (st.st_mode & S_IFDIR) return TRUE;
-        
-    }
-    /* search for a FIFO (Pipe) */
-    else if (argument == 'p')
-    {
-        if (st.st_mode & S_IFIFO) return TRUE;
-    }
-    /* search for a regular file */
-    else if (argument == 'f')
-    {
-        if (st.st_mode & S_IFREG) return TRUE;
-    }
-    /* search for a symbolic link  */
-    else if (argument == 'l')
-    {
-        if (st.st_mode & S_IFLNK) return TRUE;
-    }
-    /* search for a socket */
-    else if (argument == 's')
-    {
-        if (st.st_mode & S_IFSOCK) return TRUE;
-    }
-    /* found nothing reurn false */
-    return FALSE;
+    /* return the given value */
+    return returnValue;
 }
