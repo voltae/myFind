@@ -45,7 +45,6 @@ typedef enum nameFound {FOUND, NOTFOUND} nameFound;
 void printDir(void);
 
 int getUIDFromName(const char *name);
-int getUIDFromNumber(int number);
 
 /* prototypes for the ls functionality */
 char *getNameFromUID(uid_t uid);
@@ -188,8 +187,7 @@ int main(int argc, const char **argv) {
  */
 int do_dir(const char *dirName, const char **param) {
     
-    /* Error was produced by this line: char *basePath = malloc(sizeof(dirName)); */
-    /* basePath was f course way to short for holding the entire string, now corrected */
+    /* Basepath holds the full file path till now. */
     char *basePath = malloc((strlen(dirName) + 1) * sizeof(char));
     char *filePath = NULL;
     
@@ -228,19 +226,16 @@ int do_dir(const char *dirName, const char **param) {
             fprintf(stderr, "%s Memory error: %s\n", PROGRAM_NAME, strerror(errno));
         }
         
-        /*  int snprintf(char *str, size_t size, const char *format, ...);  creates the path in the buffer filePath at most lengthOfPath
-         * characters long, buffer overflow */
+        /*  int snprintf(char *str, size_t size, const char *format, ...); */
+        /* at the baspath get attached the given filepath to create the new filepath */
         error = (snprintf(filePath, lengthOfPath, "%s/%s", basePath, filename));
         
         if (error < 0) {
             fprintf(stderr, "%s An error occurred, %s\n", PROGRAM_NAME, strerror(errno));
         }
         
-        /* call the do_file function with the file path */
+        /* call the do_file function with the constructed file path */
         do_file(filePath, param);
-        
-        // printf("Filename: [%s/%s]\n", basePath, pdirent->d_name);
-        // printf("File is Directory: %s\n", (pdirent->d_type == DT_DIR)? "yes" : "no");
         
         /* free the filePath created in here */
         free(filePath);
@@ -280,11 +275,7 @@ int do_file(const char *filename, const char **parms) {
     
     do
     {
-        /* Valentin did this */
-        /* if the first action is null, not given, leave the loop
-         * and print the entry out as same as -print. This is not necessary, the loop will
-         *stop anyway because parms[0] == NULL, but more readable */
-        /* We don't need this case at all, just delete it and make the next as if */
+        /* if the first action is null, not given, leave the loop */
         if (!parms[0]) looping = loopExit;
         
         /* if the action -print is given, step one element in the action further,
@@ -421,13 +412,16 @@ int do_file(const char *filename, const char **parms) {
         {
             /** returns true if the argument is a correct typ */
             mybool isValidType = isFileType(*parms[i+1], st);
-            if (isValidType) out = out;
+            if (isValidType)
+            {
+                out = regOut;
+                i++;
+            }
             else
             {
                 looping = loopExit;
                 out = noOut;
             }
-            i++;
         }
         
         else if (!strcmp(parms[i], ls))
@@ -454,7 +448,7 @@ int do_file(const char *filename, const char **parms) {
     }
     
     if (S_ISDIR(st.st_mode)) {
-        /* call do_dir with this filempath to start a new recusrion to step in this directory */
+        /* call do_dir with this filempath to start a new recurion to step in this directory */
         do_dir(filename, parms);
     }
     
@@ -468,18 +462,6 @@ int getUIDFromName(const char *name) {
     struct passwd *pwd = getpwnam(name);
     
     if (pwd) return pwd->pw_uid;
-    
-    return -1;
-}
-
-/** read the user entry from system library. Check if the entry exists anyway
- * takes a number of type uid_t
- * returns the uid number datatype uid_t */
-int getUIDFromNumber(int number) {
-    struct passwd *pwd = getpwuid(number);
-    printf("%d, %p", number, pwd);
-    /* User is not in the Struct list. Leave the program, no further search is needed*/
-    if (pwd)  return pwd->pw_uid;
     
     return -1;
 }
