@@ -335,28 +335,78 @@ int do_file(const char *filename, const char **parms) {
                 /* True if the file belongs to the user uname.  If uname is numeric
                  and there is no such user name, then uname    is treated as a    user
                  ID. */
+               
+                /* 1. Check if parameter following -name is only numeric
+                 * 2. if this is the case: threat the number as char and search for valid user
+                 * if user id is ot found, take the number as valid ui id and test the file against it
+                 * 3. if parameter is not numeric, test te name for valid user.
+                    if not found, report error and exit program. */
                 
-                /* first treat the parameter as name */
-                /* The parameter after -user is a username test it */
-                int uuidTest = atoi(parms[i+1]);
-                
-                printf("st: %d, nameID: %d, parms: %s, atoi: %d, getuid: %d", st.st_uid,  getUIDFromName (parms[i+1]), parms[i+1], uuidTest, getUIDFromNumber(uuidTest));
-                
-                if (getUIDFromName(parms[i+1])== -1 && ((isStringOnlyNumbers(parms[i+1]) == TRUE) && (getUIDFromNumber(uuidTest)) == -1))  {
-                    fprintf(stderr, "myFind: \"%s\" is not the name of a known user.\n", parms[i+1]);
-                    exit(EXIT_FAILURE);
-                }
-                
-                if ((st.st_uid == getUIDFromName (parms[i+1]) || ((isStringOnlyNumbers(parms[i+1]) == TRUE) && getUIDFromNumber(uuidTest) == st.st_uid)))
+                mybool isUserOnlyNumeric = isStringOnlyNumbers(parms[i+1]);
+                int uidUser = -1;
+                /* parmater is only numeric */
+                if (isUserOnlyNumeric == TRUE)
                 {
-                    i += 2;
+                    /* treat parameter as char */
+                    uidUser = getUIDFromName(parms[i+1]);
+                    if (uidUser > -1)
+                    {
+                        /* and test the given uid with the file owner*/
+                        if (st.st_uid == uidUser)
+                        {
+                            i += 2;
+                        }
+                    }
+                    /* treat the parameter as uid number, but it had to be converted into an int.  */
+                   else
+                   {
+                       int parmAsNumber = atoi(parms[i+1]);
+                       /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
+                       if (parmAsNumber < 0 || parmAsNumber > 65535)
+                       {
+                           printf("%s %s: Numerical result out of range\n", PROGRAM_NAME, parms[i+1]);
+                           exit(EXIT_FAILURE);
+                       }
+                       /* found step to the next paramter, and mark found file to as output. */
+                      else  if (st.st_uid == parmAsNumber)
+                       {
+                           i +=2;
+                           out = regOut;
+                       }
+                       else
+                       {
+                           looping = loopCont;
+                           out = noOut;
+                           i +=2;
+                       }
+                   }
                 }
-                
+                /* parameter is not numeric only, it will be considered as user name only */
                 else
                 {
-                    looping = loopCont;
-                    out = noOut;
-                    i +=2;
+                    uidUser = getUIDFromName(parms[i+1]);
+                    /* report error if the given namenot matches with a system known user */
+                    if (uidUser < 0)
+                    {
+                        fprintf(stderr, "myFind: \"%s\" is not the name of a known user.\n", parms[i+1]);
+                        exit(EXIT_FAILURE);
+                    }
+                    /* user is found, so test the found user if it is the owner of the file */
+                    else
+                    {
+                        /* found an entry, step to the next parameter and mark file as output. */
+                        if (st.st_uid == uidUser)
+                        {
+                            i += 2;
+                            out = regOut;
+                        }
+                        else
+                        {
+                            looping = loopCont;
+                            out = noOut;
+                            i +=2;
+                        }
+                    }
                 }
             }
             else
