@@ -437,16 +437,17 @@ int do_file(const char *filename, const char **parms) {
         }
         
     } while (parms[i] && (looping == loopCont));
-    
+
     /* Output the filepath in -print format, only the path */
     if (out == regOut) {
         printf("%s\n", filename);
     }
     /* Output the path in extended format with all parameters -ls */
     else if (out == lsOut) {
-        printf("%s\n", filename);
+//        printf("%s\n", filename);
+        extendedFileOutputFromStat(&st, filename);
     }
-    
+
     if (S_ISDIR(st.st_mode)) {
         /* call do_dir with this filempath to start a new recurion to step in this directory */
         do_dir(filename, parms);
@@ -536,7 +537,7 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     // get the inode number
     long int inodeNr = fileStat->st_ino;
     // get the size of the pointer filestat
-    int sizePointer = sizeof(fileStat);
+    blkcnt_t blockSize = fileStat->st_blocks;
     // number of hardlinks in inode
     int linkAmount = fileStat->st_nlink;
     /* user Id  owner. Caution, the entry could be an number with is not a system known user */
@@ -560,7 +561,7 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     mode_t permissions = fileStat->st_mode;
     char *permissionsChar = combineFilePermissions(permissions);
     
-    printf("%lu\t %d \t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, sizePointer, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
+    printf("%lu\t %lld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, blockSize, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
     free(timeFormatted);
     free(permissionsChar);
     
@@ -572,8 +573,9 @@ char *combineFilePermissions (mode_t fileMode)
     // counter
     int i = 0;
     // Test if file is directory, or Link
-    if (fileMode & S_IFDIR) permissions[i++] = 'd';
-    else if (fileMode & S_IFLNK) permissions[i++] = 'l';
+    if (S_ISDIR(fileMode)) permissions[i++] = 'd';
+    else if (S_ISREG(fileMode)) permissions[i++] = '-';
+    else if (S_ISLNK(fileMode)) permissions[i++] = 'l';
     else permissions[i++] = '-';
     permissions[i++] = (fileMode & S_IRUSR) ? 'r' : '-';
     permissions[i++] = (fileMode & S_IWUSR) ? 'w' : '-';
