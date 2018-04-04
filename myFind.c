@@ -23,10 +23,11 @@
 #include <grp.h>        // getgrgid() get group name
 #include <time.h>       // for time conversion
 
+
 /* ------------------------------------------------------- defines -----*/
 #define FUENFHUNDERT 500 // TODO: Replace the 500 with dynamic allocation
 #define PROGRAM_NAME "myFind:"
-
+#define UID_MAX 65535
 /* ------------------------------------------------------- enums -------*/
 typedef enum {
     regOut, noOut, lsOut
@@ -167,8 +168,6 @@ int main(int argc, const char **argv) {
                 exit(EXIT_FAILURE);
             }
         }
-        
-        
     }
     
     /* call the openDirectory function for stepping though the directory */
@@ -316,6 +315,7 @@ int do_file(const char *filename, const char **parms) {
         /* if the action -user is found, step through following cases: */
         else if (!strcmp(parms[i], user))
         {
+
             if (parms[i + 1])
             {
                 /* Compare the user string with the entry from system known user. Caution, the entry can differ from a known user */
@@ -353,7 +353,7 @@ int do_file(const char *filename, const char **parms) {
                    {
                        int parmAsNumber = atoi(parms[i+1]);
                        /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
-                       if (parmAsNumber < 0 || parmAsNumber > 65535)
+                       if (parmAsNumber < 0 || parmAsNumber > UID_MAX)
                        {
                            printf("%s %s: Numerical result out of range\n", PROGRAM_NAME, parms[i+1]);
                            exit(EXIT_FAILURE);
@@ -442,11 +442,7 @@ int do_file(const char *filename, const char **parms) {
     if (out == regOut) {
         printf("%s\n", filename);
     }
-    /* Output the path in extended format with all parameters -ls */
-    else if (out == lsOut) {
-//        printf("%s\n", filename);
-        extendedFileOutputFromStat(&st, filename);
-    }
+
 
     if (S_ISDIR(st.st_mode)) {
         /* call do_dir with this filempath to start a new recurion to step in this directory */
