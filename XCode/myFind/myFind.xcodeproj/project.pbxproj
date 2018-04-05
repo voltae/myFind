@@ -20,15 +20,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		0E9D252820715F2500A5A8E3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0E5968EB2051986500A47848 /* myFind */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myFind; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E5968EE2051986500A47848 /* myFind.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = myFind.c; path = ../../../myFind.c; sourceTree = "<group>"; };
+		0E9D252A20715F2500A5A8E3 /* myFind_relative */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myFind_relative; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0E5968E82051986500A47848 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0E9D252720715F2500A5A8E3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -50,6 +67,7 @@
 			isa = PBXGroup;
 			children = (
 				0E5968EB2051986500A47848 /* myFind */,
+				0E9D252A20715F2500A5A8E3 /* myFind_relative */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,6 +100,23 @@
 			productReference = 0E5968EB2051986500A47848 /* myFind */;
 			productType = "com.apple.product-type.tool";
 		};
+		0E9D252920715F2500A5A8E3 /* myFind_relative */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0E9D253020715F2500A5A8E3 /* Build configuration list for PBXNativeTarget "myFind_relative" */;
+			buildPhases = (
+				0E9D252620715F2500A5A8E3 /* Sources */,
+				0E9D252720715F2500A5A8E3 /* Frameworks */,
+				0E9D252820715F2500A5A8E3 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = myFind_relative;
+			productName = myFind_relative;
+			productReference = 0E9D252A20715F2500A5A8E3 /* myFind_relative */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +127,10 @@
 				ORGANIZATIONNAME = "Valentin Platzgummer";
 				TargetAttributes = {
 					0E5968EA2051986500A47848 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Automatic;
+					};
+					0E9D252920715F2500A5A8E3 = {
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
@@ -110,6 +149,7 @@
 			projectRoot = "";
 			targets = (
 				0E5968EA2051986500A47848 /* myFind */,
+				0E9D252920715F2500A5A8E3 /* myFind_relative */,
 			);
 		};
 /* End PBXProject section */
@@ -120,6 +160,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				0E5968EF2051986500A47848 /* myFind.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0E9D252620715F2500A5A8E3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +294,24 @@
 			};
 			name = Release;
 		};
+		0E9D252E20715F2500A5A8E3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VQZ78255LD;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		0E9D252F20715F2500A5A8E3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VQZ78255LD;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -264,6 +329,15 @@
 			buildConfigurations = (
 				0E5968F32051986500A47848 /* Debug */,
 				0E5968F42051986500A47848 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0E9D253020715F2500A5A8E3 /* Build configuration list for PBXNativeTarget "myFind_relative" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0E9D252E20715F2500A5A8E3 /* Debug */,
+				0E9D252F20715F2500A5A8E3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
