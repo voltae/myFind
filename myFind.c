@@ -350,7 +350,7 @@ int do_file(const char *filename, const char **parms) {
                             looping = looping;
                         }
                     }
-                    /* treat the parameter as uid number, but it had to be converted into an int.  */
+                    /* no, the number as char was not found. treat the parameter as uid number, but it has to be converted into an int.  */
                    else
                    {
                      unsigned int parmAsNumber = atoi(parms[i+1]);
@@ -375,7 +375,7 @@ int do_file(const char *filename, const char **parms) {
                    }
                 }
                 /* parameter is not numeric only, it will be considered as user name only */
-                else
+                else if (isUserOnlyNumeric == FALSE)
                 {
                     isUidCorrect = getUIDFromName(parms[i+1], &uidUser);
                     /* report error if the given namenot matches with a system known user */
@@ -395,8 +395,7 @@ int do_file(const char *filename, const char **parms) {
                         }
                         else
                         {
-                           // looping = loopCont;
-                            looping = loopExit;
+                           looping = loopCont;
                             out = noOut;
                             i +=2;
                         }
@@ -525,7 +524,7 @@ char *isNameInFilename (const char *filePath, const char *name)
 
 /** hepler function, test if a char* is numeric only
  * takes a char pointer with text.
- * returns TRUE if only numers are found, FALSE in the case a Letter is in the char */
+ * returns TRUE if only numers are found, FALSE in the case a letter is in the char */
 mybool isStringOnlyNumbers (const char *testString)
 {
     mybool isNumberOnly = FALSE;
