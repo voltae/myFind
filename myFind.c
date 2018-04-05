@@ -45,7 +45,7 @@ typedef enum nameFound {FOUND, NOTFOUND} nameFound;
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
 
-int getUIDFromName(const char *name);
+mybool getUIDFromName(const char *name, unsigned int *uidNumber);
 
 /* prototypes for the ls functionality */
 char *getNameFromUID(uid_t uid);
@@ -334,26 +334,28 @@ int do_file(const char *filename, const char **parms) {
                     if not found, report error and exit program. */
                 
                 mybool isUserOnlyNumeric = isStringOnlyNumbers(parms[i+1]);
-                int uidUser = -1;
+                unsigned int uidUser = 0;
+                mybool isUidCorrect;
                 /* parmater is only numeric */
                 if (isUserOnlyNumeric == TRUE)
                 {
-                    /* treat parameter as char */
-                    uidUser = getUIDFromName(parms[i+1]);
-                    if (uidUser > -1)
+                    /* treat parameter as char, the uidUser as to be a pointer of int, because it should be an unsigned int, the error detection works now with the */
+                    isUidCorrect = getUIDFromName(parms[i+1], &uidUser);
+                    if (isUidCorrect == TRUE)
                     {
                         /* and test the given uid with the file owner*/
                         if (st.st_uid == uidUser)
                         {
                             i += 2;
+                            looping = looping;
                         }
                     }
                     /* treat the parameter as uid number, but it had to be converted into an int.  */
                    else
                    {
-                       int parmAsNumber = atoi(parms[i+1]);
+                     unsigned int parmAsNumber = atoi(parms[i+1]);
                        /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
-                       if (parmAsNumber < 0 || parmAsNumber > UID_MAX)
+                       if (parmAsNumber > UID_MAX)
                        {
                            printf("%s %s: Numerical result out of range\n", PROGRAM_NAME, parms[i+1]);
                            exit(EXIT_FAILURE);
@@ -375,9 +377,9 @@ int do_file(const char *filename, const char **parms) {
                 /* parameter is not numeric only, it will be considered as user name only */
                 else
                 {
-                    uidUser = getUIDFromName(parms[i+1]);
+                    isUidCorrect = getUIDFromName(parms[i+1], &uidUser);
                     /* report error if the given namenot matches with a system known user */
-                    if (uidUser < 0)
+                    if (isUidCorrect == FALSE)
                     {
                         fprintf(stderr, "myFind: \"%s\" is not the name of a known user.\n", parms[i+1]);
                         exit(EXIT_FAILURE);
@@ -393,7 +395,8 @@ int do_file(const char *filename, const char **parms) {
                         }
                         else
                         {
-                            looping = loopCont;
+                           // looping = loopCont;
+                            looping = loopExit;
                             out = noOut;
                             i +=2;
                         }
@@ -452,17 +455,24 @@ int do_file(const char *filename, const char **parms) {
     return 0;
     
 }
-/** read the user entry from system library. Check if the entry exists anyway
- * takes a char * with the user name
- * returns the uid number datatype uid_t (which is unsigned int) */
-int getUIDFromName(const char *name) {
+/** @brief: read the user entry from system library. Check if the entry exists anyway
+ * takes a char * with the user name and an pointer to unsigned int as buffer for the uid number datatype uid_t (which is unsigned int)
+ * @returns:  a bool true if the conversion succeded, false if not.*/
+mybool getUIDFromName(const char *name, unsigned int *uidNumber) {
     struct passwd *pwd = getpwnam(name);
     
-    if (pwd) return pwd->pw_uid;
-    
-    return -1;
+    if (pwd)
+    {
+        *uidNumber = pwd->pw_uid;
+        return TRUE;
+    }
+    return FALSE;
 }
 
+/** @brief: Check if the number does correspont to a valid entry  in the system table known users and groups
+ @argument: an unsigned integer uid_t
+ @returns: a pointer to char with name if a match in database was found
+ */
 char *getNameFromUID(uid_t uid)
 {
     struct passwd *pwd = getpwuid(uid);
@@ -533,7 +543,7 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     // get the inode number
     long int inodeNr = fileStat->st_ino;
     // get the size of the pointer filestat
-    blkcnt_t blockSize = fileStat->st_blocks;
+    blksize_t blockSize = fileStat->st_blocks;
     // number of hardlinks in inode
     int linkAmount = fileStat->st_nlink;
     /* user Id  owner. Caution, the entry could be an number with is not a system known user */
@@ -557,7 +567,7 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     mode_t permissions = fileStat->st_mode;
     char *permissionsChar = combineFilePermissions(permissions);
     
-    printf("%lu\t %lld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, blockSize, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
+    printf("%lu\t %ld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, blockSize, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
     free(timeFormatted);
     free(permissionsChar);
     

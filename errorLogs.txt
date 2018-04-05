@@ -1,0 +1,34 @@
+myFind.c: In function ‘do_file’:
+myFind.c:346:39: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+if (st.st_uid == uidUser)
+^
+Done
+
+myFind.c:362:43: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+else  if (st.st_uid == parmAsNumber)
+^
+Done
+
+myFind.c:389:39: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+if (st.st_uid == uidUser)
+^
+Done
+
+myFind.c: In function ‘extendedFileOutputFromStat’:
+myFind.c:564:12: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 3 has type ‘blkcnt_t {aka long int}’ [-Wformat=]
+printf("%lu\t %lld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, block
+Done
+
+myFind.c: In function ‘do_file’:
+myFind.c:364:43: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+else  if (st.st_uid == parmAsNumber)
+^
+Done
+
+myFind.c: In function ‘extendedFileOutputFromStat’:
+myFind.c:566:12: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 3 has type ‘blkcnt_t {aka long int}’ [-Wformat=]
+printf("%lu\t %lld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, block
+^
+Done
+
+
