@@ -353,7 +353,7 @@ int do_file(const char *filename, const char **parms) {
                     /* no, the number as char was not found. treat the parameter as uid number, but it has to be converted into an int.  */
                    else
                    {
-                     unsigned int parmAsNumber = atoi(parms[i+1]);
+                     unsigned int parmAsNumber = strtol(parms[i+1], NULL, 10);
                        /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
                        if (parmAsNumber > UID_MAX)
                        {
