@@ -349,9 +349,15 @@ int do_file(const char *filename, const char **parms) {
                             i += 2;
                             looping = looping;
                         }
+                        /* if the user number exists, but the file owner don't match, leave the loop without output */
+                        else
+                        {
+                            out = noOut;
+                            looping = loopExit;
+                        }
                     }
                     /* no, the number as char was not found. treat the parameter as uid number, but it has to be converted into an int.  */
-                   else
+                   else if (isUidCorrect == FALSE)
                    {
                      unsigned long int parmAsNumber = strtol(parms[i+1], NULL, 10);
                        /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
@@ -368,7 +374,7 @@ int do_file(const char *filename, const char **parms) {
                        }
                        else
                        {
-                           looping = loopExit;
+                           looping = looping;
                            out = noOut;
                            i +=2;
                        }

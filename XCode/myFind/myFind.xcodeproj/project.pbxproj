@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E414D8120771E3B00C947FE /* makefile in Sources */ = {isa = PBXBuildFile; fileRef = 0E414D8020771E3B00C947FE /* makefile */; };
 		0E5968EF2051986500A47848 /* myFind.c in Sources */ = {isa = PBXBuildFile; fileRef = 0E5968EE2051986500A47848 /* myFind.c */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 
 /* Begin PBXFileReference section */
 		0E0EA46F2075D7CB00009EAA /* errorLogs.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = errorLogs.txt; path = ../../../errorLogs.txt; sourceTree = "<group>"; };
+		0E414D8020771E3B00C947FE /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = makefile; path = ../../../makefile; sourceTree = "<group>"; };
 		0E5968EB2051986500A47848 /* myFind */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myFind; sourceTree = BUILT_PRODUCTS_DIR; };
 		0E5968EE2051986500A47848 /* myFind.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = myFind.c; path = ../../../myFind.c; sourceTree = "<group>"; };
 		0E9D252A20715F2500A5A8E3 /* myFind_relative */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = myFind_relative; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -76,6 +78,7 @@
 		0E5968ED2051986500A47848 /* myFind */ = {
 			isa = PBXGroup;
 			children = (
+				0E414D8020771E3B00C947FE /* makefile */,
 				0E5968EE2051986500A47848 /* myFind.c */,
 				0E0EA46F2075D7CB00009EAA /* errorLogs.txt */,
 			);
@@ -161,6 +164,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E414D8120771E3B00C947FE /* makefile in Sources */,
 				0E5968EF2051986500A47848 /* myFind.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
