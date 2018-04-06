@@ -54,7 +54,7 @@ char *getNameFromGID(gid_t gid);
 
 char *combineFilePermissions (mode_t fileMode);
 
-char *isNameInFilename (const char *filePath, const char *name);
+mybool isFilenameSameAsName (const char *filePath, const char *name);
 
 /* check the file type */
 mybool isFileType (const char argument, struct stat st);
@@ -299,8 +299,14 @@ int do_file(const char *filename, const char **parms) {
             /* if is followed by a parameter, take this as valid name */
             if (parms[i + 1])
             {
-                /* if found a name - match in path */
-                if (isNameInFilename(filename, parms[i+1])) i += 2;
+                /* Check if the given name matches exactly with the parameter name */
+                mybool isMatch = isFilenameSameAsName(filename, parms[i+1]);
+                if (isMatch == TRUE)
+                {
+                    i += 2;
+                }
+
+                
                 /* if not, leave the loop, with no output */
                 else { looping = loopExit; out = noOut; }
             }
@@ -514,9 +520,8 @@ char *getNameFromGID(gid_t gid)
     /* group exists, return the name */
     else return pwd->gr_name;
 }
-char *isNameInFilename (const char *filePath, const char *name)
+mybool isFilenameSameAsName (const char *filePath, const char *name)
 {
-    
     const char *fileName;
     
     /* if the path does not contain any '/' the filepath should be the filename,
@@ -525,8 +530,12 @@ char *isNameInFilename (const char *filePath, const char *name)
         fileName=strrchr(filePath, '/')+1;
     else fileName=filePath;
     
-    return strstr(fileName, name);
+    if (strcmp(fileName, name) == 0)
+        return TRUE;
+//    return strstr(fileName, name);
+    return FALSE;
 }
+
 
 /** hepler function, test if a char* is numeric only
  * takes a char pointer with text.
