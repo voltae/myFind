@@ -1,10 +1,17 @@
-/** @file myFind.c
+/**
+ * @mainpage myFind
+ *
  * Betriebssysteme Assigment 1 - myFind
- * Beispiel 1
+ * <br>Beispiel 1
+ *
  * @author Valentin Platzgummer
  * @author Lara Kammerer
+ */
+
+/**
+ * @file myFind.c
  *
- * @todo
+ * @brief -----------kurze Beschreibung der Datei, was enthält sie, wozu ist sie da, ...
  */
 
 //* ------------------------------------------------------ includes -- */
@@ -29,18 +36,42 @@
 #define PROGRAM_NAME "myFind:"
 #define UID_MAX 65535
 /* ------------------------------------------------------- enums -------*/
+
+/**
+ * @enum output
+ *
+ * @brief enum holding variable if Output is needed
+ */
 typedef enum {
-    regOut, noOut, lsOut
+    regOut, noOut
 } output;
+
+/**
+ * @enum do_loop
+ *
+ * @brief enum holding variable if Loop is still needed
+ */
 typedef enum {
     loopCont, loopExit
 } do_loop;
 
+/**
+ * @enum mybool
+ *
+ * @brief enum holding variable TRUE/FALSE
+ */
 typedef enum mybool {
     FALSE, TRUE
 } mybool;
 
-typedef enum nameFound {FOUND, NOTFOUND} nameFound;
+/**
+ * @enum nameFound
+ *
+ * @brief enum holding variable FOUND/NOTFOUND
+ */
+typedef enum nameFound {
+    FOUND, NOTFOUND
+} nameFound;
 
 /* ------------------------------------------------------- functions -- */
 void printDir(void);
@@ -77,7 +108,13 @@ const char *ls = "-ls";
 const char *nouser = "-nouser";
 
 
-/** @brief implementation of a simplified find programm
+/**
+ * @brief implementation of a simplified find programm
+ *
+ the main function iterates throu al actions one my one, checks if the given actions fulfil the requested syntax.
+ * names searches for matches in filepath aond/or filename.
+ * user searches files owned by the given value. This value can be either a username or an userid.
+ * type searches for specifed filetypes, such as directories, block files
  *
  * @param argc Number of arguments
  * @param argv actions used
@@ -107,7 +144,8 @@ int main(int argc, const char **argv) {
         }
         /* if a valid action is found -name, -type but the next argument is missing, print out an error message. */
         if (!(strcmp(argv[i], user) && strcmp(argv[i], uid) && strcmp(argv[i], type) && strcmp(argv[i], name))) {
-            if (argc == i + 1) {
+            if (argc == i + 1)
+            {
                 printf("%s Missing argument for %s\n",PROGRAM_NAME, argv[i]);
                 exit(EXIT_FAILURE);
             }
@@ -179,10 +217,20 @@ int main(int argc, const char **argv) {
 }
 
 /**
- * @param dirName char Pointer holding path of the found directory.
+ * @brief checks for matching struct and builds absolute path
+ *
+ * checks file for matching struct
+ * <br>if no struct is found - error
+ * <br>if matching struct found
+ * <ul>
+ * <li>check for directory</li>
+ * <li>checks the directory stream for NULL in this case the recursion will be stopped</li>
+ * <li>build absolute path and check for arguments with <i>do_file</i></li>
+ *</ul>
+ *
+ * @param dirName char Pointer holding relative path of the found directory.
  * @param param Pointer of charpointer holding the actions.
  * @return int 0 in case in regular case. -1 in error case.
- *
  */
 int do_dir(const char *dirName, const char **param) {
     
@@ -221,15 +269,17 @@ int do_dir(const char *dirName, const char **param) {
         /* create the full filepath for found file, add 2 extra spaces for  '/' and '\0' */
         int lengthOfPath = (int) (strlen(filename) + (int) strlen(basePath) + 2);
         
-        if (!(filePath = malloc(lengthOfPath * sizeof(char)))) {
+        if (!(filePath = malloc(lengthOfPath * sizeof(char))))
+        {
             fprintf(stderr, "%s Memory error: %s\n", PROGRAM_NAME, strerror(errno));
         }
         
         /*  int snprintf(char *str, size_t size, const char *format, ...); */
-        /* at the baspath get attached the given filepath to create the new filepath */
+        /* at the basepath get attached the given filepath to create the new filepath */
         error = (snprintf(filePath, lengthOfPath, "%s/%s", basePath, filename));
         
-        if (error < 0) {
+        if (error < 0)
+        {
             fprintf(stderr, "%s An error occurred, %s\n", PROGRAM_NAME, strerror(errno));
         }
         
@@ -240,7 +290,6 @@ int do_dir(const char *dirName, const char **param) {
         free(filePath);
         filePath = NULL;
         filename = NULL;
-        
     }
     
     /* free the outer basePath */
@@ -251,9 +300,22 @@ int do_dir(const char *dirName, const char **param) {
     return 0;
 }
 
+/**
+ *@brief checks file for arguments and prints if accurate
+ *
+ * lstat checks if file is a link
+ * <br>checks file for actions and their parameter
+ * <br>if action is -ls or -print immediately prints out data
+ * <br>if not - check for given argument
+ * <br> print if parameter are accurate
+ *
+ * @param filename charpointer holding the absolute filepath
+ * @param parms chardoublepointer holding the actions
+ */
 /* A second function for reading the directory and print out the entries in the fashion needed by entries given the application */
 int do_file(const char *filename, const char **parms) {
-    /* here comes the implementation of the new function */
+    /* The function acts as te second part of the recursion, the first do_dir feeds in each found file, and this function examiates each file further.
+     If a found file is a directory, then the fiel will be feeded in the first function to start a deeper level of recursiion in the file hierarchy. */
     /* st is a struct of type stat for each file, in the stat struct is the information about the file */
     struct stat st;
     
@@ -265,9 +327,9 @@ int do_file(const char *filename, const char **parms) {
     int i = 0;
     
     /* read out the struct for stat , use lstat for not trapping into a link circle */
-    if (lstat(filename, &st) == -1) {
+    if (lstat(filename, &st) == -1)
+    {
         fprintf(stderr, "%s %s: %s\n", PROGRAM_NAME, filename, strerror(errno));
-        
         /* in case of failure return to the do_dir function and read in the next entry */
         return -1;
     }
@@ -299,16 +361,17 @@ int do_file(const char *filename, const char **parms) {
             /* if is followed by a parameter, take this as valid name */
             if (parms[i + 1])
             {
-                /* Check if the given name matches exactly with the parameter name */
-                mybool isMatch = isFilenameSameAsName(filename, parms[i+1]);
-                if (isMatch == TRUE)
+                /* if found a name - match in path */
+                if (isFilenameSameAsName(filename, parms[i + 1]))
                 {
                     i += 2;
                 }
-
-                
                 /* if not, leave the loop, with no output */
-                else { looping = loopExit; out = noOut; }
+                else
+                {
+                    looping = loopExit;
+                    out = noOut;
+                }
             }
             /* if no parameter was found, print the error, no argument for name found */
             else
@@ -321,7 +384,6 @@ int do_file(const char *filename, const char **parms) {
         /* if the action -user is found, step through following cases: */
         else if (!strcmp(parms[i], user))
         {
-
             if (parms[i + 1])
             {
                 /* Compare the user string with the entry from system known user. Caution, the entry can differ from a known user */
@@ -332,12 +394,12 @@ int do_file(const char *filename, const char **parms) {
                 /* True if the file belongs to the user uname.  If uname is numeric
                  and there is no such user name, then uname    is treated as a    user
                  ID. */
-               
+                
                 /* 1. Check if parameter following -name is only numeric
                  * 2. if this is the case: threat the number as char and search for valid user
                  * if user id is ot found, take the number as valid ui id and test the file against it
                  * 3. if parameter is not numeric, test te name for valid user.
-                    if not found, report error and exit program. */
+                 if not found, report error and exit program. */
                 
                 mybool isUserOnlyNumeric = isStringOnlyNumbers(parms[i+1]);
                 unsigned int uidUser = 0;
@@ -353,9 +415,7 @@ int do_file(const char *filename, const char **parms) {
                         if (st.st_uid == uidUser)
                         {
                             i += 2;
-                            looping = looping;
                         }
-                        /* if the user number exists, but the file owner don't match, leave the loop without output */
                         else
                         {
                             out = noOut;
@@ -363,28 +423,26 @@ int do_file(const char *filename, const char **parms) {
                         }
                     }
                     /* no, the number as char was not found. treat the parameter as uid number, but it has to be converted into an int.  */
-                   else if (isUidCorrect == FALSE)
-                   {
-                     unsigned long int parmAsNumber = strtol(parms[i+1], NULL, 10);
-                       /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
-                       if (parmAsNumber > UID_MAX)
-                       {
-                           printf("%s %s: Numerical result out of range\n", PROGRAM_NAME, parms[i+1]);
-                           exit(EXIT_FAILURE);
-                       }
-                       /* found step to the next paramter, and mark found file to as output. */
-                      else  if (st.st_uid == parmAsNumber)
-                       {
-                           i +=2;
-                           out = regOut;
-                       }
-                       else
-                       {
-                           looping = looping;
-                           out = noOut;
-                           i +=2;
-                       }
-                   }
+                    else if (isUidCorrect == FALSE)
+                    {
+                        unsigned int parmAsNumber = strtol(parms[i+1], NULL, 10);
+                        /* if the user id is bigger than 16 Bit, report error atoi with return -1 in this case. (This is behavior from osx, Linux gives the full number */
+                        if (parmAsNumber > UID_MAX)
+                        {
+                            printf("%s %s: Numerical result out of range\n", PROGRAM_NAME, parms[i+1]);
+                            exit(EXIT_FAILURE);
+                        }
+                        /* found step to the next paramter, and mark found file to as output. */
+                        else  if (st.st_uid == parmAsNumber)
+                        {
+                            i +=2;
+                        }
+                        else
+                        {
+                            looping = loopExit;
+                            out = noOut;
+                        }
+                    }
                 }
                 /* parameter is not numeric only, it will be considered as user name only */
                 else if (isUserOnlyNumeric == FALSE)
@@ -403,20 +461,18 @@ int do_file(const char *filename, const char **parms) {
                         if (st.st_uid == uidUser)
                         {
                             i += 2;
-                            out = regOut;
                         }
                         else
                         {
-                           looping = loopCont;
+                            looping = loopExit;
                             out = noOut;
-                            i +=2;
                         }
                     }
                 }
             }
             else
             {
-                printf("%s Missing Argument for \"-name\"\n", PROGRAM_NAME);
+                printf("%s Missing Argument for \"-user\"\n", PROGRAM_NAME);
                 exit(EXIT_FAILURE);
             }
         }
@@ -438,37 +494,36 @@ int do_file(const char *filename, const char **parms) {
             }
         }
         
-        else if (!strcmp(parms[i], ls))
-        {
-            out = lsOut;
-            i++;
-        }
-        
-        /* if no valid argument is found, increment the counter */
+        /* if no valid argument is found, increment the counter.
+         * Because error checking for file types are already done n the main function on further errochecking ar needed here.*/
         else
         {
             i++;
         }
         
     } while (parms[i] && (looping == loopCont));
-
+    
     /* Output the filepath in -print format, only the path */
     if (out == regOut) {
         printf("%s\n", filename);
     }
-
-
+    
     if (S_ISDIR(st.st_mode)) {
         /* call do_dir with this filempath to start a new recurion to step in this directory */
         do_dir(filename, parms);
     }
     
     return 0;
-    
 }
-/** @brief: read the user entry from system library. Check if the entry exists anyway
- * takes a char * with the user name and an pointer to unsigned int as buffer for the uid number datatype uid_t (which is unsigned int)
- * @returns:  a bool true if the conversion succeded, false if not.*/
+
+/**
+ * @brief read the user entry from system library. Check if the entry exists anyway
+ *
+ * takes a charpointer with the user name and an pointer to unsigned int as buffer for the uid number datatype uid_t (which is unsigned int)
+ *
+ * @param name charpointer holding filename
+ * @param uidNumber pointer as buffer for the found uid number of type integer.
+ * @returns  a bool true if the conversion succeded, false if not.*/
 mybool getUIDFromName(const char *name, unsigned int *uidNumber) {
     struct passwd *pwd = getpwnam(name);
     
@@ -480,9 +535,13 @@ mybool getUIDFromName(const char *name, unsigned int *uidNumber) {
     return FALSE;
 }
 
-/** @brief: Check if the number does correspont to a valid entry  in the system table known users and groups
- @argument: an unsigned integer uid_t
- @returns: a pointer to char with name if a match in database was found
+/**
+ * @brief Check if the number does correspond to a valid entry in the system table known users and groups
+ *
+ * checks if the UIDnumber corresponds to a valid entry and reads out user name
+ *
+ * @argument unsigned integer uid_t
+ * @returns a pointer to char with name if a match in database was found
  */
 char *getNameFromUID(uid_t uid)
 {
@@ -503,8 +562,15 @@ char *getNameFromUID(uid_t uid)
         return pwd->pw_name;
     }
 }
-/** function returns a groupname with a systemcall
- * if the group does not exist, return groupID as string */
+
+/**
+ * @brief checks if the GID number does correspond to a valid entry in the system table known users and groups
+ *
+ * checks if the GIDnumber corresponds to a valid entry and reads out user name
+ *
+ * @argument unsigned integer gid_t
+ * @returns a groupname with a systemcall - if the group does not exist, return groupID as string
+ */
 char *getNameFromGID(gid_t gid)
 {
     struct group *pwd = getgrgid(gid);
@@ -520,8 +586,20 @@ char *getNameFromGID(gid_t gid)
     /* group exists, return the name */
     else return pwd->gr_name;
 }
+
+/**-----------------------------------------------------
+ * @brief checks if parameter of -name is icluded in filepath
+ *
+ * checks if filepath is only filename - if not filename is picked out
+ * <br>checks if parameter of -name is icluded in filename
+ *
+ * @param filePath charpointer holding filepath of checked file
+ * @param name charpointer holding parameter to be checked
+ * @returns NULL if parameter is not included
+ */
 mybool isFilenameSameAsName (const char *filePath, const char *name)
 {
+    
     const char *fileName;
     
     /* if the path does not contain any '/' the filepath should be the filename,
@@ -532,14 +610,15 @@ mybool isFilenameSameAsName (const char *filePath, const char *name)
     
     if (strcmp(fileName, name) == 0)
         return TRUE;
-//    return strstr(fileName, name);
     return FALSE;
 }
 
-
-/** hepler function, test if a char* is numeric only
- * takes a char pointer with text.
- * returns TRUE if only numers are found, FALSE in the case a letter is in the char */
+/**
+ * @brief helper function - tests if a charpointer is numeric only
+ *
+ * <br>takes a char pointer with text
+ * @returns TRUE if only numbers are found, FALSE in the case a letter is in the char
+ */
 mybool isStringOnlyNumbers (const char *testString)
 {
     mybool isNumberOnly = FALSE;
@@ -552,6 +631,14 @@ mybool isStringOnlyNumbers (const char *testString)
     return isNumberOnly;
 }
 
+/**
+ * @brief prints extended output if action is -ls
+ *
+ * takes statpointer and reads out filedata for extended print
+ *
+ * @param fileStat statpointer holds struct containing filedata
+ * @param filePath charpointer holds filepath
+ */
 void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePath)
 {
     // get the inode number
@@ -584,8 +671,16 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
     printf("%lu\t %ld\t\t %s\t %3d\t %s\t %s\t %6lu\t %s %s\n", inodeNr, blockSize, permissionsChar, linkAmount, userName, groupName, fileLength, timeFormatted, filePath);
     free(timeFormatted);
     free(permissionsChar);
-    
 }
+
+/**
+ * @brief combines file permissions to be printed
+ *
+ * fileMode is checked by layering with the system masks from sys/types.h
+ * <br>if permissions are set print accurate letter - if not print '-'
+ *
+ * @param fileMode 12bit value containing set permissions
+ */
 char *combineFilePermissions (mode_t fileMode)
 {
     // output variable
@@ -621,6 +716,15 @@ char *combineFilePermissions (mode_t fileMode)
     return permissions;
 }
 
+/**
+ * @brief checks for argument of -type
+ *
+ * checks if argument matches type of file
+ *
+ * @param argument char holding argument checked
+ * @param st stat holding type of file
+ * @returns TRUE if argument matches filetype
+ */
 mybool isFileType (const char argument, struct stat st)
 {
     /*Check on type
