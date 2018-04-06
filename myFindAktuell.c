@@ -111,7 +111,10 @@ const char *nouser = "-nouser";
 /**
  * @brief implementation of a simplified find programm
  *
- * -------------------detaillierte Beschreibung der Fkt
+ the main function iterates throu al actions one my one, checks if the given actions fulfil the requested syntax.
+ * names searches for matches in filepath aond/or filename.
+ * user searches files owned by the given value. This value can be either a username or an userid.
+ * type searches for specifed filetypes, such as directories, block files
  *
  * @param argc Number of arguments
  * @param argv actions used
@@ -221,7 +224,7 @@ int main(int argc, const char **argv) {
  * <br>if matching struct found
  * <u>
  * <li>check for directory</li>
- * <li>if directory - change directory to current --------------------------zuerst chdir und dann erst ausgabe?? formulierung verständlicher!!</li>
+ * <li>checks the directory stream for NULL in this case the recursion will be stopped</li>
  * <li>build absolute path and check for arguments with <i>do_file</i></li>
  *</ul>
  *
@@ -311,7 +314,8 @@ int do_dir(const char *dirName, const char **param) {
 */
 /* A second function for reading the directory and print out the entries in the fashion needed by entries given the application */
 int do_file(const char *filename, const char **parms) {
-    /* here comes the implementation of the new function -------------------------------------------------------------------
+    /* The function acts as te second part of the recursion, the first do_dir feeds in each found file, and this function examiates each file further.
+     If a found file is a directory, then the fiel will be feeded in the first function to start a deeper level of recursiion in the file hierarchy. */
     /* st is a struct of type stat for each file, in the stat struct is the information about the file */
     struct stat st;
     
@@ -490,7 +494,8 @@ int do_file(const char *filename, const char **parms) {
             }
         }
         
-        /* if no valid argument is found, increment the counter -----------------------------------ERROR??*/
+        /* if no valid argument is found, increment the counter.
+	* Because error checking for file types are already done n the main function on further errochecking ar needed here.*/
         else
         {
             i++;
@@ -517,7 +522,7 @@ int do_file(const char *filename, const char **parms) {
  * takes a charpointer with the user name and an pointer to unsigned int as buffer for the uid number datatype uid_t (which is unsigned int)
  *
  * @param name charpointer holding filename
- * @param uidNumber integerpointer taking UIDnumber --------------------------------------
+ * @param uidNumber pointer as buffer for the found uid number of type integer.
  * @returns  a bool true if the conversion succeded, false if not.*/
 mybool getUIDFromName(const char *name, unsigned int *uidNumber) {
     struct passwd *pwd = getpwnam(name);
@@ -671,7 +676,7 @@ void extendedFileOutputFromStat (const struct stat *fileStat, const char *filePa
 /**
  * @brief combines file permissions to be printed
  *
- * fileMode is checked by layering with masks -----------------------------------------------
+ * fileMode is checked by layering with the system masks from sys/types.h
  * <br>if permissions are set print accurate letter - if not print '-'
  *
  * @param fileMode 12bit value containing set permissions
