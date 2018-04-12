@@ -56,7 +56,6 @@
 
 #define DATE_LENGTH 64
 #define MODIFIER_LENGTH 10
-// ### FB G16: look for __LINE__, __FILE__, LONG_MAX, LONG_MIN-----------------------------------------------------------------------------
 
 
 static void do_file(const char *name, const char * const * parms);
@@ -87,18 +86,17 @@ static void error_log(int line, char* text, const char* argument);
 int main(int argc, const char *argv[]) {
 
 	if (argc > 1) {/*at least one Argument must be specified*/
-	// ### FB G16: What if no path is given? - argv[2] would be second parameter and argv[1] first action
+// ### FB G16: What if no path is given? - argv[2] would be second parameter and argv[1] first action
 		compare_parms(&(argv[2]), argv[0]);/*pre Argument compare to check consistents of the arguments*/
-		// ### FB G16: already assuming argv[1] is a path
+// ### FB G16: already assuming argv[1] is a path
 		do_file(argv[1], &(argv[2]));/*Entry Point for the iterarion of the tree*/
 	}
-	// ### FB G16: hier auch korrekte Fehlermeldung durch error_log??---------------------------------------------------------------------------------
+// ### FB G16: hier auch korrekte Fehlermeldung durch error_log?? valentin?----------------------------------------------------------------------
 	else {/*no File and/or argument specified*/
 		error_log(__LINE__, "usage: myfind <file or directory>\n -name <pattern>\n -user <name> | <uid>\n -type[bcdpfls]\n -path <path>\n -nouser\n -print\n -ls\n", argv[0]);
 		exit(EXIT_FAILURE);	/*EXIT_FAILURE because Argument is needed*/
 	}
 
-	// ### FB G16: wut?---------------------------------------------------------------------------------------------------------------------------------
 	if (fflush(stdout) == EOF) {/*The C library function int fflush(FILE *stream) flushes the output buffer of a stream.*/
 		error_log(__LINE__, "failed flush", argv[0]);
 	}
@@ -120,7 +118,7 @@ static void do_file(const char *name, const char * const * parms) {
 
 	struct stat stbuf;
 	if (lstat(name, &stbuf) == -1) {/*reading information of the file (attributes)*/
-		// ### FB G16: no check for errno - which error case?
+// ### FB G16: no check for errno - which error case?
 		error_log(__LINE__, "reading file", name);
 		return;
 	}
@@ -139,6 +137,7 @@ static void do_file(const char *name, const char * const * parms) {
 *
 * \ void Funktion no return
 */
+// ### FB G16: dir_name is actually the path of current file to check
 static void do_dir(const char *dir_name, const char * const * parms) {
 	DIR *dp;
 	struct dirent *dirp;
@@ -152,6 +151,7 @@ static void do_dir(const char *dir_name, const char * const * parms) {
 
 	while ((dirp = readdir(dp)) != NULL) {/*as long as next entry is not null create Path and calls do_file*/
 		if (dirp->d_name[0] != '.') {
+// ### FB G16: in erstem If-Zweig ist new_path um 1 zu lang..anmerken? - valentin-------------------------------------------------------------------------
 			char new_path[(strlen(dir_name) + strlen(dirp->d_name) + 2)];
 			if (dir_name[strlen(dir_name) - 1] == '/') {
 				sprintf(new_path, "%s%s", dir_name, dirp->d_name);
@@ -161,11 +161,13 @@ static void do_dir(const char *dir_name, const char * const * parms) {
 			}
 			do_file(new_path, parms);
 		}
+// ### FB G16: was kann dieses errno hier? :/ sorry mein hirn lässt nach um die zeit---------------------------------------------------------------------
 		errno = 0;
 	}
 	if (errno != 0) {
 		error_log(__LINE__, "while do_dir", dir_name);
 	}
+// ### FB G16: closedir not necessary because of rekursion?----------------------------------------------------------------------------------------------
 	if (closedir(dp) == -1) {
 		error_log(__LINE__, "close dir", dir_name);
 	}
@@ -183,7 +185,6 @@ static void do_dir(const char *dir_name, const char * const * parms) {
 */
 static int compare_type(const struct stat *file, const char type) {
 	char typeChar = get_type(file->st_mode);
-	// ### FB G16: can be checked if only one char?--------------------------------------------------------------------------------------------------
 	if (typeChar == type) {/*compare if type matching then return 1*/
 		return 1;
 	}
@@ -243,16 +244,15 @@ static int compare_name(const char *file, const char *name)
 	int ret = 0;
     int fnmatchRet;
 	
-	// ### FB G16: why +1?
+// ### FB G16: why +1? valentin?--------------------------------------------------------------------------------------------------------
     char tempFileName[strlen(file)+1]; 
     char *baseName;
 
-	// ### FB G16: memcpy what for?---------------------------------------------------------------------------------------------------------
+// ### FB G16: memcpy what for?--Valentin - kann man da nicht einfach sagen tempFileName = file?----------------------------------------
     memcpy(tempFileName, file, strlen(file)+1);/*else error validation const*/
-	// ### FB G16: baseName is actual filename of file checked------------------------------------------------------------------------------
     baseName = basename(tempFileName);
 
-	// ### FB G16: fnmatch gives back 0 if match - ignores *?--------------------------------------------------------------------------------
+// ### FB G16: fnmatch gives back 0 if match - ignores *?--------------------------------------------------------------------------------
     fnmatchRet = fnmatch(name,baseName,FNM_NOESCAPE);/*check if basename matches pattern in name:*/
     if(fnmatchRet == 0) {
         ret=1;
@@ -281,7 +281,6 @@ static int compare_user(const struct stat *file, const char* user)
 	struct passwd *pwd = NULL;
 
 	pwd = getpwnam(user);
-	// ### FB G16: check correct error handling -------------------------------------------------------------------------------------
 	if (errno != 0) { /*Error handling pwnam */
 		error_log(__LINE__, "getting getpwnam", user);
 		return 0;
@@ -291,7 +290,6 @@ static int compare_user(const struct stat *file, const char* user)
 		if (file->st_uid == pwd->pw_uid) { return 1; }
 	}
 	else { /*user name not found user id*/
-		   // ### FB G16: check pEnd -------------------------------------------------------------------------------------------------()
 		uid = strtol(user, &pEnd, 10);
 		if (*pEnd == '\0') {
 			if (file->st_uid == uid) { return 1; }
@@ -357,7 +355,7 @@ static void	print_ls(const struct stat *file, const char *file_name)
 	/* set Permission Bits*/
 	static const char *rwx[] = { "---", "--x", "-w-", "-wx",
 		"r--", "r-x", "rw-", "rwx" };
-	// ### FB G16: the calculation of index is kind of hard to read
+// ### FB G16: the calculation of index is kind of hard to read
 	strcpy(&permissionBits[1], rwx[(file->st_mode >> 6) & 7]);
 	strcpy(&permissionBits[4], rwx[(file->st_mode >> 3) & 7]);
 	strcpy(&permissionBits[7], rwx[(file->st_mode & 7)]);
@@ -378,7 +376,7 @@ static void	print_ls(const struct stat *file, const char *file_name)
 		}
 		else { /* print file information of link*/
 			linkbuf[file->st_size] = '\0';
-			// ### FB G16: why test userUID and grpUID?------------------------------------------------------------------------------------------------------
+// ### FB G16: why test userUID and grpUID?------------------------------------------------------------------------------------------------------
 			if(userUid == 0 && grpUid == 0) {
 				if (printf("%ld\t%ld\t%s\t%u\t%s\t%s\t%ld\t%s\t%s -> %s\n", file->st_ino, blockCount, permissionBits, file->st_nlink, pwdEntry->pw_name, grpEntry->gr_name, file->st_size, date, file_name, linkbuf) < 0) {
 					fprintf(stderr, "error printing output");
@@ -401,7 +399,7 @@ static void	print_ls(const struct stat *file, const char *file_name)
 			}	
 		}
 	}
-	// ### FB G16: Blockfile and Charfile do not have a blocksize?----------------------------------------------------------------------------------------------
+// ### FB G16: Blockfile and Charfile do not have a blocksize?-----------------------------------------------------------------------------------
 	else if (S_ISCHR(file->st_mode) || S_ISBLK(file->st_mode)) {
 			if(userUid == 0 && grpUid == 0) {
 				if (printf("%ld\t%ld\t%s\t%u\t%s\t%s\t%s\t%s\t%s\n", file->st_ino, blockCount, permissionBits, file->st_nlink, pwdEntry->pw_name, grpEntry->gr_name, " ", date, file_name) < 0) {
@@ -460,6 +458,7 @@ static void	print_ls(const struct stat *file, const char *file_name)
 * \return 0 no match 1 matching
 *
 */
+// ### FB G16: *name is now path searched for because of parm, in print_match *name is path, as here *file -> confusing as same var name is used for different arguments
 static int compare_path(const char *file, const char *name) {
 
 	int ret = 0; /*return value*/
@@ -495,7 +494,7 @@ static void print_match(const char *name, const char * const * parms, const stru
 	int printed = 0;
 	while (parms[count] != NULL) {
 		if (strcmp(parms[count], PARM_PRINT) == 0) {
-			// ### FB G16: printf instead of fprintf
+// ### FB G16: printf instead of fprintf
 			if (printf("%s\n", name) < 0) { error_log(__LINE__, "print", name); } /*-print*/
 			printed = 1;
 		}
@@ -513,19 +512,17 @@ static void print_match(const char *name, const char * const * parms, const stru
 		}
 		else if (strcmp(parms[count], PARM_TYPE) == 0) {
 			count++;
-			// ### FB G16: *parms[0] should be *parms[count]
+// ### FB G16: *parms[0] should be *parms[count]
 			if (compare_type(file, *parms[0]) == 0) { return; } /*-type*/
 		}
-		// ### FB G16: read nouser--what to do?-------------------------------------------------------------------------------------------------------------
 		else if (strcmp(parms[count], PARM_NOUSER) == 0) {
 			if (compare_nouser(file) == 0) { return; } /*-nouser*/
 		}
-		// ### FB G16: read path--what to do?---------------------------------------------------------------------------------------------------------------
 		else if (strcmp(parms[count], PARM_PATH) == 0) {
 			count++;
 			if (compare_path(name, parms[count]) == 0) { return; } /*-path*/
 		}
-		// ### FB G16: 'if' not necessary - while loop looks if == NULL, if error because of missing argument for action - already error in compare_parms - no call for print_match
+// ### FB G16: 'if' not necessary - while loop looks if == NULL, if error because of missing argument for action - already error in compare_parms - no call for print_match
 		if (parms[count] != NULL) {
 			count++;
 		}
@@ -572,9 +569,9 @@ static int compare_nouser(const struct stat *file)
 */
 static void compare_parms(const char * const * parms, const char *name)
 {
-	// ### FB G16: no check if path for searching is given, if not then first action is argv[1] --------------------------------------(line 90)
+// ### FB G16: no check if path for searching is given, if not then first action is argv[1] --------------------------------------(line 90)
 
-	// ### FB G16: sufficient to forward pointer (doublepointer not necessary if worked with copy of pointer?)
+// ### FB G16: sufficient to forward pointer (doublepointer not necessary if worked with copy of pointer?)
 	char **argP;
 	argP = (char**)parms;
 
@@ -585,11 +582,9 @@ static void compare_parms(const char * const * parms, const char *name)
 		else if (strcmp(*argP, PARM_LS) == 0) {
 			/*no extra value needed*/
 		}
-		// ### FB G16: nouser anschauen!!----------------------------------------------------------------------------------------
 		else if (strcmp(*argP, PARM_NOUSER) == 0) {
 			/*no extra value needed*/
 		}
-		// ### FB G16: check PARM_USER again----------------------------------------------------------------------------------------
 		else if (strcmp(*argP, PARM_USER) == 0) { /*Check if user or uid exists*/
 			struct passwd *pwd = NULL;
 			char *pEnd;
@@ -606,13 +601,13 @@ static void compare_parms(const char * const * parms, const char *name)
 			}
 			if (pwd == NULL) {
 				strtolRet = strtol(*argP, &pEnd, 10);
-				// ### FB G16: only if same as LONG_MAX or LONG_MIN?
+// ### FB G16: only if same as LONG_MAX or LONG_MIN?
 				if (strtolRet == LONG_MAX || strtolRet == LONG_MIN) {
 					error_log(__LINE__, "parse userid", *argP);
 					exit(EXIT_FAILURE);
 				}
 				if (*pEnd != '\0') {
-					// ### FB G16: fprintf not tested
+// ### FB G16: fprintf not tested
 					fprintf(stderr, "%s: `%s' is not the name of a known user\n", name, *argP); /*Try to recreate error of find because of test.sh*/
 					exit(EXIT_FAILURE);
 				}
@@ -643,7 +638,6 @@ static void compare_parms(const char * const * parms, const char *name)
 				exit(EXIT_FAILURE);
 			}
 		}
-		// ### FB G16:-------------------------------------------------------------------------------------------------------------------------
 		else if (strcmp(*argP, PARM_PATH) == 0) { /*checks if there is a path given*/
 			argP++;
 			if (*argP == NULL) {
@@ -655,7 +649,7 @@ static void compare_parms(const char * const * parms, const char *name)
 			error_log(__LINE__, "arguments inconsitent", "");
 			exit(EXIT_FAILURE);
 		}
-		// ### FB G16: if unnecessary because of while loop, else if incremented in else if branch always checked and if *argP == NULL -> Error
+// ### FB G16: 'if' unnecessary because of while loop, else if incremented in else if branch always checked and if *argP == NULL -> Error
 		if (*argP != NULL) {
 			argP++;
 		}
@@ -674,6 +668,7 @@ static void compare_parms(const char * const * parms, const char *name)
 *
 */
 static void error_log(int line, char* text, const char* argument) {
+	// ### FB G16: right error message? valentin du weißt wie die ausschauen müssten?-------------------------------------------------------
 	// ### FB G16: fprintf not tested, line in output should only be used for testing
 	fprintf(stderr, "%s: error: %s at Line: %d argument: %s\n", __FILE__, text, line, argument);
 }
