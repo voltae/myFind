@@ -91,7 +91,7 @@ int main(int argc, const char *argv[]) {
         // ### FB G16: already assuming argv[1] is a path
         do_file(argv[1], &(argv[2]));/*Entry Point for the iterarion of the tree*/
     }
-    // ### FB G16: hier auch korrekte Fehlermeldung durch error_log?? VALENTIN: bei fprintf auf stderr gibt es die Ausnahme, das nicht auf Fehler getestet werden muß. Coding guidelines!
+    // ### FB G16: twice the outpout of the filename, and in general the errormessage is long
     else {/*no File and/or argument specified*/
         error_log(__LINE__, "usage: myfind <file or directory>\n -name <pattern>\n -user <name> | <uid>\n -type[bcdpfls]\n -path <path>\n -nouser\n -print\n -ls\n", argv[0]);
         exit(EXIT_FAILURE);    /*EXIT_FAILURE because Argument is needed*/
@@ -151,8 +151,7 @@ static void do_dir(const char *dir_name, const char * const * parms) {
     
     while ((dirp = readdir(dp)) != NULL) {/*as long as next entry is not null create Path and calls do_file*/
         if (dirp->d_name[0] != '.') {
-            // ### FB G16: in erstem If-Zweig ist new_path um 1 zu lang..anmerken? - valentin-------------------------------------------------------------------------
-            // ### FB G16: VALENTIN: sprintf is not tested in failed case, sprintf is not safe against buffer overflow
+            // ### FB G16: sprintf is not tested in failed case, sprintf is not safe against buffer overflow
             char new_path[(strlen(dir_name) + strlen(dirp->d_name) + 2)];
             if (dir_name[strlen(dir_name) - 1] == '/') {
                 sprintf(new_path, "%s%s", dir_name, dirp->d_name);
@@ -162,15 +161,12 @@ static void do_dir(const char *dir_name, const char * const * parms) {
             }
             do_file(new_path, parms);
         }
-        // ### FB G16: was kann dieses errno hier? :/ sorry mein hirn lässt nach um die zeit---------------------------------------------------------------------
-        // ### FB G16: VALENTIN: hier wird der errno für die nächste Überprüfung rückgesetzt. die Überprüfung findet statt, wenn readdir fehlschlägt.
         errno = 0;
     }
     if (errno != 0) {
         error_log(__LINE__, "while do_dir", dir_name);
     }
-    // ### FB G16: closedir not necessary because of rekursion?----------------------------------------------------------------------------------------------
-    // ### FB G16: VALENTIN: doch, das Directory muß nach beenden der geschlossen werden. Das stimmt schon hier.
+
     if (closedir(dp) == -1) {
         error_log(__LINE__, "close dir", dir_name);
     }
@@ -241,23 +237,20 @@ static char get_type(const mode_t mode)
  * \return 0 no match, 1 match
  *
  */
-// ### FB G16: file is actually the path of current file to check----------------------------------------------------------------------(zeile 481)
+// ### FB G16: file is actually the path of current file to check, argument name are inconsistient
 static int compare_name(const char *file, const char *name)
 {
     int ret = 0;
     int fnmatchRet;
     
-    // ### FB G16: why +1? valentin?--------------------------------------------------------------------------------------------------------
-    // ### VALENTIN: für den platz des '/0' terminator
+
     char tempFileName[strlen(file)+1];
     char *baseName;
     
-    // ### FB G16: memcpy what for? VALENTIN: Sie verwenden die Bibliotheksfunktion basename um den filename zu extrahieren. Der liefert im negativfall "." zurück. Wahrscheinlich wollen sie sich den originalfilenamen nicht zusammenschießen.
     memcpy(tempFileName, file, strlen(file)+1);/*else error validation const*/
-    // ###
+
     baseName = basename(tempFileName);
     
-    // ### FB G16: fnmatch gives back 0 if match - ignores VALENTIN: prüfen sei nicht genau diesen Fall im unten stehenden if Zweig?
     fnmatchRet = fnmatch(name,baseName,FNM_NOESCAPE);/*check if basename matches pattern in name:*/
     if(fnmatchRet == 0) {
         ret=1;
@@ -294,7 +287,7 @@ static int compare_user(const struct stat *file, const char* user)
     if (pwd != NULL) { /*user name found*/
         if (file->st_uid == pwd->pw_uid) { return 1; }
     }
-    // ### FB G16 VALENTIN: strtol not tested against failing
+    // ### FB G16: strtol not tested against failing
     else { /*user name not found user id*/
         uid = strtol(user, &pEnd, 10);
         if (*pEnd == '\0') {
@@ -315,7 +308,7 @@ static int compare_user(const struct stat *file, const char* user)
  *
  * \ void Funktion no return
  */
-//
+
 static void    print_ls(const struct stat *file, const char *file_name)
 {
     int userUid = 0;
@@ -383,7 +376,7 @@ static void    print_ls(const struct stat *file, const char *file_name)
         }
         else { /* print file information of link*/
             linkbuf[file->st_size] = '\0';
-            // ### FB G16: why test userUID and grpUID?------------------------------------------------------------------------------------------------------
+            // ### FB G16: why test userUID and grpUID?
             if(userUid == 0 && grpUid == 0) {
                 if (printf("%ld\t%ld\t%s\t%u\t%s\t%s\t%ld\t%s\t%s -> %s\n", file->st_ino, blockCount, permissionBits, file->st_nlink, pwdEntry->pw_name, grpEntry->gr_name, file->st_size, date, file_name, linkbuf) < 0) {
                     fprintf(stderr, "error printing output");
@@ -406,7 +399,7 @@ static void    print_ls(const struct stat *file, const char *file_name)
             }
         }
     }
-    // ### FB G16: Blockfile and Charfile do not have a blocksize?-----------------------------------------------------------------------------------
+    // ### FB G16: Blockfile and Charfile do not have a blocksize?
     else if (S_ISCHR(file->st_mode) || S_ISBLK(file->st_mode)) {
         if(userUid == 0 && grpUid == 0) {
             if (printf("%ld\t%ld\t%s\t%u\t%s\t%s\t%s\t%s\t%s\n", file->st_ino, blockCount, permissionBits, file->st_nlink, pwdEntry->pw_name, grpEntry->gr_name, " ", date, file_name) < 0) {
@@ -493,8 +486,7 @@ static int compare_path(const char *file, const char *name) {
  * \ void Funktion no return Value but return in case of no match
  *
  */
-// ### FB G16: name is actually the path of current file to check----------------------------------------------------------------------------(zeile 118)
-// ### FB G16: doublepointer unnecessary because never changed
+
 static void print_match(const char *name, const char * const * parms, const struct stat *file)
 {
     int count = 0;
@@ -519,7 +511,7 @@ static void print_match(const char *name, const char * const * parms, const stru
         }
         else if (strcmp(parms[count], PARM_TYPE) == 0) {
             count++;
-            // ### FB G16: *parms[0] should be *parms[count]
+            // ### FB G16: *parms[0] should be *parms[count], it only works if *parms point on the right argument.
             if (compare_type(file, *parms[0]) == 0) { return; } /*-type*/
         }
         else if (strcmp(parms[count], PARM_NOUSER) == 0) {
@@ -576,7 +568,7 @@ static int compare_nouser(const struct stat *file)
  */
 static void compare_parms(const char * const * parms, const char *name)
 {
-    // ### FB G16: no check if path for searching is given, if not then first action is argv[1] --------------------------------------(line 90)
+    // ### FB G16: no check if path for searching is given, if not then first action is argv[1]
     
     // ### FB G16: sufficient to forward pointer (doublepointer not necessary if worked with copy of pointer?)
     char **argP;
@@ -608,13 +600,13 @@ static void compare_parms(const char * const * parms, const char *name)
             }
             if (pwd == NULL) {
                 strtolRet = strtol(*argP, &pEnd, 10);
-                // ### FB G16: only if same as LONG_MAX or LONG_MIN?
+                // ### FB G16: only if same as LONG_MAX or LONG_MIN, should pwd be between LONG_MIN and LONG_MAX?
                 if (strtolRet == LONG_MAX || strtolRet == LONG_MIN) {
                     error_log(__LINE__, "parse userid", *argP);
                     exit(EXIT_FAILURE);
                 }
                 if (*pEnd != '\0') {
-                    // ### FB G16: fprintf not tested
+
                     fprintf(stderr, "%s: `%s' is not the name of a known user\n", name, *argP); /*Try to recreate error of find because of test.sh*/
                     exit(EXIT_FAILURE);
                 }
@@ -675,8 +667,8 @@ static void compare_parms(const char * const * parms, const char *name)
  *
  */
 static void error_log(int line, char* text, const char* argument) {
-    // ### FB G16: right error message? valentin du weißt wie die ausschauen müssten? VALENTIN: Laut coding guideline muß der Name des Programmes enthalten sein + muß auf stderr geschrieben werden. Beides  passiert hier korrekt!
-    // ### FB G16: fprintf not tested, line in output should only be used for testing, fprintf auf stderr muß nicht überprüft werden.
+    // ### FB G16: Line number should be outputted only in test code.
     fprintf(stderr, "%s: error: %s at Line: %d argument: %s\n", __FILE__, text, line, argument);
 }
 
+/* ***************************************************************************** */
