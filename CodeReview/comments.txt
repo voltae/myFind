@@ -1,0 +1,14 @@
+Kommentare Gruppe16
+
+Wir haben Euren Code gelesen und getestet.
+Was uns sehr positiv aufgefallen ist: eure Funktion der Filetypen Check liefert als Returnwert gleich den entsprechenden Char Code, der in die ls Ausgabe direkt implementiert werden kann.
+
+Das Setzen der Permission Bits mit der Bit Shift Methode ist zwar sehr elegant, aber etwas schwer zu lesen.
+
+Ausgabe der Error als eigene Funktion finden wir eine gute Idee.
+
+
+Ausgabe als ./myfind . -type d funktioniert bei euch nicht, sollte nur Directories ausgeben, gibt aber alles aus.
+
+
+
